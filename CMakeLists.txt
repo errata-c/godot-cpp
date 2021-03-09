@@ -34,38 +34,18 @@
 # Todo
 # Test build for Windows, Mac and mingw.
 
-project(godot-cpp)
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.19)
+
+project(godot-cpp
+VERSION 0.1.0
+LANGUAGES C CXX)
 
 option(GENERATE_TEMPLATE_GET_NODE "Generate a template version of the Node class's get_node." ON)
-
-# Change the output directory to the bin directory
-set(BUILD_PATH ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${BUILD_PATH}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${BUILD_PATH}")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${BUILD_PATH}")
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
 
 # Default build type is Debug in the SConstruct
 if(CMAKE_BUILD_TYPE STREQUAL "")
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
-
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-	add_definitions(-D_DEBUG)
-else()
-	add_definitions(-DNDEBUG)
-endif(CMAKE_BUILD_TYPE MATCHES Debug)
-
-# Set the c++ standard to c++14
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Input from user for godot headers and the api file
 set(GODOT_HEADERS_DIR "godot-headers" CACHE STRING "")
@@ -84,7 +64,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 		set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} /MD /O2") # /Oy /GL /Gy
 		STRING(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 		string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
-	endif(CMAKE_BUILD_TYPE MATCHES Debug)
+	endif()
 
 	# Disable conversion warning, trunkation, unreferenced var, signed missmatch
 	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} /wd4244 /wd4305 /wd4101 /wd4018 /wd4267")
@@ -98,16 +78,10 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	#endif()
 
 else()
-
-#elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-	# using Clang
-#elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	# using GCC and maybe MinGW?
-
 	set(GODOT_LINKER_FLAGS "-static-libgcc -static-libstdc++ -Wl,-R,'$$ORIGIN'")
 
 	# Hmm.. maybe to strikt?
-	set(GODOT_COMPILE_FLAGS "-fPIC -g -Wwrite-strings")
+	set(GODOT_COMPILE_FLAGS "-g -Wwrite-strings")
 	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wchar-subscripts -Wcomment -Wdisabled-optimization")
 	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wformat -Wformat=2 -Wformat-security -Wformat-y2k")
 	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wimport -Winit-self -Winline -Winvalid-pch -Werror")
@@ -129,7 +103,7 @@ else()
 		set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -fno-omit-frame-pointer -O0")
 	else()
 		set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -O3")
-	endif(CMAKE_BUILD_TYPE MATCHES Debug)
+	endif()
 endif()
 
 # Generate source from the bindings file
@@ -152,23 +126,22 @@ file(GLOB_RECURSE SOURCES src/*.c**)
 file(GLOB_RECURSE HEADERS include/*.h**)
 
 # Define our godot-cpp library
-add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
-target_include_directories(${PROJECT_NAME}
+add_library(godot-cpp SHARED "${SOURCES}" "${HEADERS}")
+target_include_directories(godot-cpp
 	PUBLIC
-	include
-	include/core
-	include/gen
-)
-
-# Put godot headers as SYSTEM PUBLIC to exclude warnings from irrelevant headers
-target_include_directories(${PROJECT_NAME}
+	"include"
+	"include/core"
+	"include/gen"
+	
 	SYSTEM PUBLIC
-	${GODOT_HEADERS_DIR}
+	"${GODOT_HEADERS_DIR}"
 )
+target_compile_definitions(godot-cpp PUBLIC "$<IF:$<Config:Debug>,_DEBUG,NDEBUG>"
+target_compile_features(godot-cpp PUBLIC cxx_std_14)
 
-# Add the compile flags
-set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${GODOT_COMPILE_FLAGS})
-set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS ${GODOT_LINKER_FLAGS})
+target_compile_options(godot-cpp PUBLIC ${GODOT_COMPILE_FLAGS})
+target_link_options(godot-cpp PUBLIC ${GODOT_LINKER_FLAGS})
+
 
 # Create the correct name (godot.os.build_type.system_bits)
 
@@ -184,7 +157,8 @@ if(ANDROID)
 	# Added the android abi after system name
 	set(SYSTEM_NAME ${SYSTEM_NAME}.${ANDROID_ABI})
 	# Android does not have the bits at the end if you look at the main godot repo build
-	set_property(TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME "godot-cpp.${SYSTEM_NAME}.${BUILD_TYPE}")
+	set_property(TARGET godot-cpp PROPERTY OUTPUT_NAME "godot-cpp.${SYSTEM_NAME}.${BUILD_TYPE}")
 else()
-	set_property(TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME "godot-cpp.${SYSTEM_NAME}.${BUILD_TYPE}.${BITS}")
+	set_property(TARGET godot-cpp PROPERTY OUTPUT_NAME "godot-cpp.${SYSTEM_NAME}.${BUILD_TYPE}.${BITS}")
 endif()
+

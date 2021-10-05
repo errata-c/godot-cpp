@@ -163,6 +163,8 @@ godot.creator.*
 # Visual Studio 2017 and Visual Studio Code workspace folder
 /.vs
 /.vscode
+out/
+CMakeSettings.json
 
 # Visual Studio Code workspace file
 *.code-workspace

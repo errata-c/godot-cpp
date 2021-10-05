@@ -34,13 +34,15 @@
 # Todo
 # Test build for Windows, Mac and mingw.
 
-project(godot-cpp)
-cmake_minimum_required(VERSION 3.6)
+# Version 3.16 is the newest version supported by Ubuntu
+cmake_minimum_required(VERSION 3.16)
 
-option(GENERATE_TEMPLATE_GET_NODE "Generate a template version of the Node class's get_node." ON)
+project(GODOT_CPP
+VERSION 0.2.0
+LANGUAGES C CXX)
 
 # Change the output directory to the bin directory
-set(BUILD_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(BUILD_PATH ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${BUILD_PATH}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${BUILD_PATH}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${BUILD_PATH}")
@@ -51,28 +53,33 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
 
+if(NOT IS_SUBPROJECT)
+	include(FetchContent)
+	
+	# This is for installing the project targets
+	FetchContent_Declare(
+		ez-cmake
+		GIT_REPOSITORY "https://github.com/errata-c/ez-cmake.git"
+		GIT_TAG "ba4fb8714f815919e90b5905552b3fc41142d847"
+	)
+	FetchContent_MakeAvailable(ez-cmake)
+endif()
+
+option(GODOT_CPP_GENERATE_TEMPLATE_GET_NODE "Generate a template version of the Node class's get_node method." ON)
+
+# The default config directory is one that cmake's find_package function will automatically search for package config files.
+set(GODOT_CPP_CONFIG_DIR "share/godot-cpp" CACHE STRING "The relative directory to install godot-cpp package config files.")
+
 # Default build type is Debug in the SConstruct
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-	add_definitions(-D_DEBUG)
-else()
-	add_definitions(-DNDEBUG)
-endif(CMAKE_BUILD_TYPE MATCHES Debug)
+set(GODOT_CPP_HEADERS_DIR "godot-headers" CACHE STRING 
+	"Location of the c-api header files, can be changed if you have a different set of headers to use")
 
-# Set the c++ standard to c++14
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-if(NOT DEFINED BITS)
-	set(BITS 32)
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(BITS 64)
-	endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-endif()
+set(GODOT_CPP_CUSTOM_API_FILE "godot-headers/api.json" CACHE STRING 
+	"Location of the api.json file, describing what to actually generate from the header files")
 
 # Input from user for godot headers and the api file
 set(GODOT_HEADERS_DIR "godot-headers" CACHE STRING "")
@@ -81,130 +88,177 @@ set(GODOT_CUSTOM_API_FILE "godot-headers/api.json" CACHE STRING "")
 set(GODOT_COMPILE_FLAGS )
 set(GODOT_LINKER_FLAGS )
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-	# using Visual Studio C++
-	set(GODOT_COMPILE_FLAGS "/EHsc /WX") # /GF /MP
+# Determine what the platform name and architecture is.
+# This creates the cache entries GD_PLATFORM_NAME and GD_PLATFORM_ARCH
+include("cmake/platform_checks.cmake")
 
-	if(CMAKE_BUILD_TYPE MATCHES Debug)
-		set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} /MDd") # /Od /RTC1 /Zi
-	else()
-		set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} /MD /O2") # /Oy /GL /Gy
-		STRING(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-		string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
-	endif(CMAKE_BUILD_TYPE MATCHES Debug)
-
+# using Visual Studio C++
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "^.*MSVC.*$")
+	# Treat all warnings as erros
+	set(GODOT_COMPILE_FLAGS "/WX") # /GF /MP
+	
+	# These flags enable msvc to generate a multithreaded dll
+	list(APPEND GODOT_COMPILE_FLAGS "$<IF:$<CONFIG:Debug,RelWithDebInfo>,/MDd,/MD>") # /Od /RTC1 /Zi
+	
 	# Disable conversion warning, trunkation, unreferenced var, signed missmatch
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} /wd4244 /wd4305 /wd4101 /wd4018 /wd4267")
+	list(APPEND GODOT_COMPILE_FLAGS "/wd4244" "/wd4305" "/wd4101" "/wd4018" "/wd4267")
+else()
+	# link to static libgcc and libstdc++
+	set(GODOT_LINKER_FLAGS "-static-libgcc" "-static-libstdc++")
 
-	# Todo: Check if needed.
-	add_definitions(-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS)
-
-	# Unkomment for warning level 4
-	#if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-	#	string(REGEX REPLACE "/W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	#endif()
-
-else()  # GCC/Clang
-	set(GODOT_LINKER_FLAGS "-static-libgcc -static-libstdc++ -Wl,-R,'$$ORIGIN'")
-
-	if(NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
-		set(GODOT_COMPILE_FLAGS "-fPIC")
-	endif()
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -g -Wwrite-strings")
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wchar-subscripts -Wcomment -Wdisabled-optimization")
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wformat -Wformat=2 -Wformat-security -Wformat-y2k")
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wimport -Winit-self -Winline -Winvalid-pch -Werror")
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wmissing-braces -Wmissing-format-attribute")
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wmissing-include-dirs -Wmissing-noreturn -Wpacked -Wpointer-arith")
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wredundant-decls -Wreturn-type -Wsequence-point")
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wswitch -Wswitch-enum -Wtrigraphs")
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wuninitialized -Wunknown-pragmas -Wunreachable-code -Wunused-label")
-	set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wunused-value -Wvariadic-macros -Wvolatile-register-var -Wno-error=attributes")
+	# Hmm.. maybe to strikt?
+	list(APPEND GODOT_COMPILE_FLAGS "-Wwrite-strings")
+	list(APPEND GODOT_COMPILE_FLAGS "-Wchar-subscripts" "-Wcomment" "-Wdisabled-optimization")
+	list(APPEND GODOT_COMPILE_FLAGS "-Wformat" "-Wformat=2" "-Wformat-security" "-Wformat-y2k")
+	list(APPEND GODOT_COMPILE_FLAGS "-Wimport" "-Winit-self" "-Winline" "-Winvalid-pch" "-Werror")
+	list(APPEND GODOT_COMPILE_FLAGS "-Wmissing-braces" "-Wmissing-format-attribute")
+	list(APPEND GODOT_COMPILE_FLAGS "-Wmissing-include-dirs" "-Wmissing-noreturn" "-Wpacked" "-Wpointer-arith")
+	list(APPEND GODOT_COMPILE_FLAGS "-Wredundant-decls" "-Wreturn-type" "-Wsequence-point")
+	list(APPEND GODOT_COMPILE_FLAGS "-Wswitch" "-Wswitch-enum" "-Wtrigraphs")
+	list(APPEND GODOT_COMPILE_FLAGS "-Wuninitialized" "-Wunknown-pragmas" "-Wunreachable-code" "-Wunused-label")
+	list(APPEND GODOT_COMPILE_FLAGS "-Wunused-value" "-Wvariadic-macros" "-Wvolatile-register-var" "-Wno-error=attributes")
 
 	# -Wshadow -Wextra -Wall -Weffc++ -Wfloat-equal -Wstack-protector -Wunused-parameter -Wsign-compare -Wunused-variable -Wcast-align
 	# -Wunused-function -Wstrict-aliasing -Wstrict-aliasing=2 -Wmissing-field-initializers
 
-	if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
-		set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wno-ignored-attributes")
-	endif()
-
-	if(CMAKE_BUILD_TYPE MATCHES Debug)
-		set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -fno-omit-frame-pointer -O0")
-	else()
-		set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -O3")
-	endif(CMAKE_BUILD_TYPE MATCHES Debug)
+	list(APPEND GODOT_COMPILE_FLAGS "$<$<NOT:$<PLATFORM_ID:Android>>:-Wno-ignored-attributes>")
 endif()
 
 # Generate source from the bindings file
-find_package(Python3 3.4 REQUIRED) # pathlib should be present
-if(GENERATE_TEMPLATE_GET_NODE)
+find_package(Python REQUIRED)
+if(GODOT_CPP_GENERATE_TEMPLATE_GET_NODE)
 	set(GENERATE_BINDING_PARAMETERS "True")
 else()
 	set(GENERATE_BINDING_PARAMETERS "False")
 endif()
 
-message(STATUS "Generating Bindings")
-execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", headers=True)"
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	RESULT_VARIABLE HEADERS_FILE_LIST_RESULT
-	OUTPUT_VARIABLE HEADERS_FILE_LIST
-)
-set(HEADERS_FILE_LIST ${HEADERS_FILE_LIST})
-
-execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", sources=True)"
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	RESULT_VARIABLE SOURCES_FILE_LIST_RESULT
-	OUTPUT_VARIABLE SOURCES_FILE_LIST
-)
-set(SOURCES_FILE_LIST ${SOURCES_FILE_LIST})
-
-add_custom_command(OUTPUT ${HEADERS_FILE_LIST} ${SOURCES_FILE_LIST}
-		COMMAND "${Python3_EXECUTABLE}" "-c" "import binding_generator; binding_generator.generate_bindings(\"${GODOT_CUSTOM_API_FILE}\", \"${GENERATE_BINDING_PARAMETERS}\", \"${CMAKE_CURRENT_BINARY_DIR}\")"
-		VERBATIM
+if(NOT "$CACHE{GODOT_CPP_BINDINGS_GENERATED}")
+	execute_process(COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_SOURCE_DIR}\", headers=True)"
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		MAIN_DEPENDENCY ${GODOT_CUSTOM_API_FILE}
-		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/binding_generator.py
-		COMMENT Generating Bindings
+		RESULT_VARIABLE HEADERS_FILE_LIST_RESULT
+		OUTPUT_VARIABLE HEADERS_FILE_LIST
+		ERROR_VARIABLE HEADERS_ERROR
+	)
+	set(HEADERS_FILE_LIST ${HEADERS_FILE_LIST})
+
+	if(NOT HEADERS_ERROR STREQUAL "")
+		message(FATAL_ERROR "${HEADERS_ERROR}")
+	endif()
+
+	execute_process(COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_SOURCE_DIR}\", sources=True)"
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		RESULT_VARIABLE SOURCES_FILE_LIST_RESULT
+		OUTPUT_VARIABLE SOURCES_FILE_LIST
+		ERROR_VARIABLE SOURCES_ERROR
+	)
+	set(SOURCES_FILE_LIST ${SOURCES_FILE_LIST})
+
+	if(NOT SOURCES_ERROR STREQUAL "")
+		message(FATAL_ERROR "${SOURCES_ERROR}")
+	endif()
+
+	set(GODOT_CPP_BINDINGS_GENERATED TRUE CACHE INTERNAL "")
+	set(GODOT_CPP_HEADERS_FILE_LIST "${HEADERS_FILE_LIST}" CACHE INTERNAL "")
+	set(GODOT_CPP_SOURCES_FILE_LIST "${SOURCES_FILE_LIST}" CACHE INTERNAL "")
+endif()
+
+add_custom_command(OUTPUT ${GODOT_CPP_HEADERS_FILE_LIST} ${GODOT_CPP_SOURCES_FILE_LIST}
+	COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.generate_bindings(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${GENERATE_BINDING_PARAMETERS}\", \"${CMAKE_CURRENT_SOURCE_DIR}\")"
+	VERBATIM
+	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+	MAIN_DEPENDENCY "${GODOT_CPP_CUSTOM_API_FILE}"
+	DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/binding_generator.py"
+	COMMENT "Generating Bindings"
 )
 
 # Get Sources
-file(GLOB_RECURSE SOURCES src/*.c**)
-file(GLOB_RECURSE HEADERS include/*.h**)
+file(GLOB_RECURSE CORE_SOURCES "src/core/*.c**")
+file(GLOB_RECURSE CORE_HEADERS "include/core/*.h**")
 
-# Define our godot-cpp library
-add_library(${PROJECT_NAME}
-		${SOURCES}
-		${SOURCES_FILE_LIST}
-		${HEADERS}
-		${HEADERS_FILE_LIST}
+# Define the godot-cpp library
+add_library(godot-cpp STATIC 
+	"${CORE_SOURCES}" 
+	"${CORE_HEADERS}"
+
+	"${GODOT_CPP_HEADERS_FILE_LIST}"
+	"${GODOT_CPP_SOURCES_FILE_LIST}"
 )
-target_include_directories(${PROJECT_NAME}
+
+target_include_directories(godot-cpp
 	PUBLIC
-	include
-	include/core
-	${CMAKE_CURRENT_BINARY_DIR}/include/gen/
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/core>"
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/gen>"
+	
+	"$<INSTALL_INTERFACE:include>"
+	"$<INSTALL_INTERFACE:include/core>"
+	"$<INSTALL_INTERFACE:include/gen>"
+
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${GODOT_CPP_HEADERS_DIR}>"
+)
+target_compile_definitions(godot-cpp PUBLIC 
+	"$<IF:$<CONFIG:Debug,RelWithDebInfo>,_DEBUG,NDEBUG>" 
+	"$<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS>"
+)
+target_compile_features(godot-cpp PUBLIC cxx_std_14)
+target_compile_options(godot-cpp PUBLIC ${GODOT_COMPILE_FLAGS})
+target_link_options(godot-cpp PUBLIC ${GODOT_LINKER_FLAGS})
+
+string(TOLOWER "${GD_PLATFORM_NAME}" "GD_SYSTEM_NAME")
+
+set_target_properties(godot-cpp PROPERTIES
+	POSITION_INDEPENDENT_CODE "TRUE"
+	EXPORT_NAME "cpp"
+	BUILD_RPATH_USE_ORIGIN "TRUE"
+	OUTPUT_NAME "godot-cpp.${GD_SYSTEM_NAME}.$<LOWER_CASE:$<CONFIG>>.${GD_PLATFORM_ARCH}"
 )
 
-# Put godot headers as SYSTEM PUBLIC to exclude warnings from irrelevant headers
-target_include_directories(${PROJECT_NAME}
-	SYSTEM PUBLIC
-	${GODOT_HEADERS_DIR}
-)
+add_library(godot::cpp ALIAS godot-cpp)
 
-# Add the compile flags
-set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${GODOT_COMPILE_FLAGS})
-set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS ${GODOT_LINKER_FLAGS})
 
-# Create the correct name (godot.os.build_type.system_bits)
-
-string(TOLOWER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME)
-string(TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE)
-
-if(ANDROID)
-	# Added the android abi after system name
-	set(SYSTEM_NAME ${SYSTEM_NAME}.${ANDROID_ABI})
-	# Android does not have the bits at the end if you look at the main godot repo build
-	set_property(TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME "godot-cpp.${SYSTEM_NAME}.${BUILD_TYPE}")
+if(IS_SUBPROJECT)
+	include("cmake/postconfig.cmake")
 else()
-	set_property(TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME "godot-cpp.${SYSTEM_NAME}.${BUILD_TYPE}.${BITS}")
+
+	# Install all the include files
+	install(DIRECTORY "include/" DESTINATION "include" 
+		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+	)
+
+	# Install the generated header files as well
+	install(DIRECTORY "${GODOT_CPP_HEADERS_DIR}/" DESTINATION "include"
+		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+	)
+
+	install(TARGETS godot-cpp
+		EXPORT godot-cpp-targets
+		RUNTIME DESTINATION "bin/$<CONFIG>"
+		ARCHIVE DESTINATION "lib/$<CONFIG>"
+		LIBRARY DESTINATION "lib/$<CONFIG>"
+	)
+
+	# Installs nativelib and nativescript template files, as well as target_info for the package
+	install(
+	FILES 
+		"cmake/nativelib.gdnlib" 
+		"cmake/nativescript.gdns.in" 
+		"cmake/update_gdnlib.cmake" 
+		"${CMAKE_CURRENT_BINARY_DIR}/platform_info.cmake"
+	DESTINATION 
+		"${GODOT_CPP_CONFIG_DIR}"
+	)
+
+	# Install the main package files, this allows the use of find_package(godot-cpp) later
+	install_package(
+		NAME "godot-cpp"
+		NAMESPACE "godot::"
+		EXPORT "godot-cpp-targets"
+		VERSION "${GODOT_CPP_VERSION}"
+		COMPATIBILITY "SameMajorVersion"
+		DESTINATION "${GODOT_CPP_CONFIG_DIR}"
+
+		# Postconfig contains the necessary setup for the install_gdlib function, to be used downstream
+		POSTCONFIG "${CMAKE_CURRENT_SOURCE_DIR}/cmake/postconfig.cmake"
+	)
+
 endif()

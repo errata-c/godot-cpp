@@ -4,6 +4,11 @@
 .godot/
 /gen/
 
+CMakeSettings.json
+CMakeUserPresets.json
+out
+build
+
 # Misc
 logs/*
 

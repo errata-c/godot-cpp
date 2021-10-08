@@ -20,20 +20,21 @@ endif()
 # Find and set the platform name for proper installation
 
 
+
 if(WINDOWS_STORE)
-	set(GD_PLATFORM_NAME_TMP "UWP")
+	set(GD_PLATFORM_NAME_TMP "uwp")
 	set(GD_PLATFORM_ARCH_TMP "${BITS}")
 	
 elseif(WINDOWS)
-	set(GD_PLATFORM_NAME_TMP "Windows")
+	set(GD_PLATFORM_NAME_TMP "windows")
 	set(GD_PLATFORM_ARCH_TMP "${BITS}")
 	
 elseif(UNIX AND NOT APPLE)
-	set(GD_PLATFORM_NAME_TMP "X11")
+	set(GD_PLATFORM_NAME_TMP "x11")
 	set(GD_PLATFORM_ARCH_TMP "${BITS}")
 
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Haiku.*")
-	set(GD_PLATFORM_NAME_TMP "Haiku")
+	set(GD_PLATFORM_NAME_TMP "haiku")
 	set(GD_PLATFORM_ARCH_TMP "${BITS}")
 	
 # Now the harder platforms...
@@ -45,13 +46,16 @@ elseif(APPLE)
 			message(FATAL_ERROR "Only 64-bit builds are supported for the macOS target!")
 		endif()
 	
-		set(GD_PLATFORM_NAME_TMP "OSX")
+		set(GD_PLATFORM_NAME_TMP "osx")
 		set(GD_PLATFORM_ARCH_TMP "${BITS}")
 		
 		
 	elseif("${CMAKE_SYSTEM_NAME}" MATCHES ".*iOS.*")
-		set(GD_PLATFORM_NAME_TMP "iOS")
+		set(GD_PLATFORM_NAME_TMP "ios")
 
+		# OSX compiles multiple architectures at once, this needs to process the list, not do string compare
+		# IDK if gdextensions supports multi-arch osx libraries however.
+		
 		if(CMAKE_OSX_ARCHITECTURES STREQUAL "armv7")
 			set(GD_PLATFORM_ARCH_TMP "armv7")
 		elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
@@ -64,26 +68,32 @@ elseif(APPLE)
 	endif()
 
 elseif(ANDROID)
-	set(GD_PLATFORM_NAME_TMP "Android")
+	set(GD_PLATFORM_NAME_TMP "android")
 	
 	if(NOT DEFINED ANDROID_ABI)
 		message(FATAL_ERROR 
-			"Compiling for android system, but ANDROID_ABI is undefined! "
-			"Cross compiling for android can be done with NVIDIA Nsight Tegra Visual Studio Edition, Visual Studio tools for Android, the NDK, or a standalone toolchain. More information can be found in the cmake-toolchains documentation."
+			"Compiling for android system, but ANDROID_ABI is undefined!\n"
+			"Cross compiling for android can be done with NVIDIA Nsight Tegra Visual Studio Edition, Visual Studio tools for Android, the NDK, or a standalone toolchain.\n"
+			"More information can be found in the cmake-toolchains documentation."
 		)
 	endif()
 	
-	if(NOT "${ANDROID_ABI}" MATCHES "armeabi-v7a|arm64-v8a|x86|x86_64")
+	if("${ANDROID_ABI}" MATCHES "armeabi-v7a")
+		set(GD_PLATFORM_ARCH_TMP "armv7a")
+	elseif("${ANDROID_ABI}" MATCHES "arm64-v8a")
+		set(GD_PLATFORM_ARCH_TMP "arm64")
+	elseif("${ANDROID_ABI}" MATCHES "x86|x86_64")
+		set(GD_PLATFORM_ARCH_TMP "${ANDROID_ABI}")
+	else()
 		message(FATAL_ERROR "Unsupported android abi selected!")
 	endif()
-
-	set(GD_PLATFORM_ARCH_TMP "${ANDROID_ABI}")
+	
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES ".*Emscripten.*")
-	set(GD_PLATFORM_NAME_TMP "HTML5")
+	set(GD_PLATFORM_NAME_TMP "html5")
 	set(GD_PLATFORM_ARCH_TMP "wasm32")
 	
 elseif("${CMAKE_C_COMPILER_TARGET}" STREQUAL "wasm32" OR "${CMAKE_CXX_COMPILER_TARGET}" STREQUAL "wasm32")
-	set(GD_PLATFORM_NAME_TMP "HTML5")
+	set(GD_PLATFORM_NAME_TMP "html5")
 	set(GD_PLATFORM_ARCH_TMP "wasm32")
 	
 elseif("${CMAKE_C_COMPILER_TARGET}" STREQUAL "wasm64" OR "${CMAKE_CXX_COMPILER_TARGET}" STREQUAL "wasm64")

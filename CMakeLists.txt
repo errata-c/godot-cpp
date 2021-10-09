@@ -34,8 +34,9 @@
 # Version 3.16 is the newest version supported by Ubuntu
 cmake_minimum_required(VERSION 3.16)
 
+# Version should be the version of the godot-headers
 project(GODOT_CPP
-VERSION 0.2.0
+VERSION 4.0.0
 LANGUAGES C CXX)
 
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)

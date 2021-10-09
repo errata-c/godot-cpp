@@ -1,6 +1,11 @@
 # Misc
 logs/*
 
+CMakeSettings.json
+CMakeUserPresets.json
+out
+build
+
 # Binaries
 *.o
 *.os

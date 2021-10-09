@@ -3,6 +3,11 @@ gen/*
 logs/*
 *.log
 
+CMakeSettings.json
+CMakeUserSettings.json
+out
+build
+
 # Binaries
 *.o
 *.os

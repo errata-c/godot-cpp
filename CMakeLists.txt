@@ -38,7 +38,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(GODOT_CPP
-VERSION 0.2.0
+VERSION 3.4.5
 LANGUAGES C CXX)
 
 # Change the output directory to the bin directory

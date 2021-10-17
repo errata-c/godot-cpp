@@ -204,19 +204,15 @@ else()
 
 	install(TARGETS godot-cpp
 		EXPORT godot-cpp-targets
-		RUNTIME DESTINATION "bin/$<CONFIG>"
-		ARCHIVE DESTINATION "lib/$<CONFIG>"
-		LIBRARY DESTINATION "lib/$<CONFIG>"
 	)
 
 	# Installs nativelib and nativescript template files, as well as target_info for the package
 	install(
-	FILES 
-		"cmake/nativelib.gdnlib" 
-		"cmake/nativescript.gdns.in" 
-		"cmake/update_gdnlib.cmake" 
+	FILES
+		"cmake/template.gdextension"
+		"cmake/update_gdextension.cmake"
 		"${CMAKE_CURRENT_BINARY_DIR}/platform_info.cmake"
-	DESTINATION 
+	DESTINATION
 		"${GODOT_CPP_CONFIG_DIR}"
 	)
 

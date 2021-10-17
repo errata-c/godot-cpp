@@ -3,6 +3,8 @@
 .import/
 .godot/
 /gen/
+include/gen/
+src/gen/
 
 CMakeSettings.json
 CMakeUserPresets.json

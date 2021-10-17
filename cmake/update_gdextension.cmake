@@ -3,13 +3,13 @@ cmake_minimum_required(VERSION 3.16)
 set(GD_CONFIGURATIONS @GD_CONFIGURATIONS@)
 
 # Avoid installing when the config is not in the whitelist, we check here instead of in postconfig to support multi-config generators
-if(NOT DEFINED GD_CONFIGURATIONS OR "${CMAKE_BUILD_TYPE}" IN_LIST "GD_CONFIGURATIONS")
+if(NOT DEFINED GD_CONFIGURATIONS OR "${GD_INSTALL_CONFIG}" IN_LIST "GD_CONFIGURATIONS")
 	set(GD_CURRENT_BINARY_DIR "@GD_CURRENT_BINARY_DIR@")
 	set(GD_CMAKE_DIR "@GD_CMAKE_DIR@")
 
 	set(GD_PLATFORM_NAME "@GD_PLATFORM_NAME@")
 	set(GD_PLATFORM_ARCH "@GD_PLATFORM_ARCH@")
-	string(TOLOWER "${CMAKE_BUILD_TYPE}" GD_PLATFORM_CONFIG)
+	string(TOLOWER "${GD_INSTALL_CONFIG}" GD_PLATFORM_CONFIG)
 
 	set(GD_NAME "@GD_NAME@")
 	set(GD_DESTINATION "@GD_DESTINATION@")
@@ -33,11 +33,7 @@ if(NOT DEFINED GD_CONFIGURATIONS OR "${CMAKE_BUILD_TYPE}" IN_LIST "GD_CONFIGURAT
 	endif()
 
 	# Defines GD_DEPENDENCY_FILES and GD_TARGET_FILE
-	if(NOT "${CMAKE_BUILD_TYPE}")
-		include("${GD_CURRENT_BINARY_DIR}/gdnlib_target_files_Debug.cmake")
-	else()
-		include("${GD_CURRENT_BINARY_DIR}/gdnlib_target_files_${CMAKE_BUILD_TYPE}.cmake")
-	endif()
+	include("${GD_CURRENT_BINARY_DIR}/gdnlib_target_files_${GD_INSTALL_CONFIG}.cmake")
 
 	# find the project root directory
 	set(GD_PROJECT_DIR "${GD_ABSOLUTE_DIR}")

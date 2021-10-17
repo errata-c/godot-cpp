@@ -134,7 +134,7 @@ function(install_gdextension)
 		"set(GD_DEPENDENCY_FILES ${GD_DEPENDENCY_FILES})\nset(GD_TARGET_FILE \"$<TARGET_FILE:${GD_TARGET}>\")\n"
 	)
 	
-	install(SCRIPT "${GD_CURRENT_BINARY_DIR}/update_gdextension.cmake"
+	install(CODE "set(GD_INSTALL_CONFIG $<CONFIG>)\ninclude(${GD_CURRENT_BINARY_DIR}/update_gdextension.cmake)"
 		${GD_ARG_COMPONENT}
 		${GD_ARG_EXCLUDE_FROM_ALL}
 	)

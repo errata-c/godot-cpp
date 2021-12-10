@@ -1,5 +1,6 @@
 # Misc
 logs/*
+*.log
 
 CMakeSettings.json
 CMakeUserSettings.json

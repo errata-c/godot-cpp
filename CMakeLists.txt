@@ -48,7 +48,7 @@ if(NOT IS_SUBPROJECT)
 	FetchContent_Declare(
 		ez-cmake
 		GIT_REPOSITORY "https://github.com/errata-c/ez-cmake.git"
-		GIT_TAG "ba4fb8714f815919e90b5905552b3fc41142d847"
+		GIT_TAG main
 	)
 	FetchContent_MakeAvailable(ez-cmake)
 endif()

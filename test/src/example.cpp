@@ -55,6 +55,9 @@ void Example::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("return_extended_ref"), &Example::return_extended_ref);
 	ClassDB::bind_method(D_METHOD("extended_ref_checks"), &Example::extended_ref_checks);
 
+	ClassDB::bind_method(D_METHOD("test_array"), &Example::test_array);
+	ClassDB::bind_method(D_METHOD("test_dictionary"), &Example::test_dictionary);
+
 	{
 		MethodInfo mi;
 		mi.arguments.push_back(PropertyInfo(Variant::STRING, "some_argument"));
@@ -79,6 +82,14 @@ void Example::_bind_methods() {
 	BIND_ENUM_CONSTANT(ANSWER_TO_EVERYTHING);
 
 	BIND_CONSTANT(CONSTANT_WITHOUT_ENUM);
+}
+
+Example::Example() {
+	UtilityFunctions::print("Constructor.");
+}
+
+Example::~Example() {
+	UtilityFunctions::print("Destructor.");
 }
 
 // Methods.
@@ -118,12 +129,31 @@ Ref<ExampleRef> Example::extended_ref_checks(Ref<ExampleRef> p_ref) const {
 }
 
 Variant Example::varargs_func(const Variant **args, GDNativeInt arg_count, GDNativeCallError &error) {
-	UtilityFunctions::print("Varargs called with ", String::num(arg_count), " arguments");
+	UtilityFunctions::print("Varargs called with ", String::num((double)arg_count), " arguments");
 	return arg_count;
 }
 
 void Example::emit_custom_signal(const String &name, int value) {
 	emit_signal("custom_signal", name, value);
+}
+
+Array Example::test_array() const {
+	Array arr;
+
+	arr.resize(2);
+	arr[0] = Variant(1);
+	arr[1] = Variant(2);
+
+	return arr;
+}
+
+Dictionary Example::test_dictionary() const {
+	Dictionary dict;
+
+	dict["hello"] = "world";
+	dict["foo"] = "bar";
+
+	return dict;
 }
 
 // Properties.

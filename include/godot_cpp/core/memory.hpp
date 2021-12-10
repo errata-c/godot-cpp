@@ -68,16 +68,17 @@ public:
 	static void free_static(void *p_ptr);
 };
 
-#define memnew(m_v)                                                           \
-	([&]() {                                                                  \
-		if constexpr (std::is_base_of<godot::Object, decltype(m_v)>::value) { \
-			return godot::internal::Creator<decltype(m_v)>::_new();           \
-		} else {                                                              \
-			return new ("") m_v;                                              \
-		}                                                                     \
-	}())
+_ALWAYS_INLINE_ void postinitialize_handler(void *) {}
 
-#define memnew_placement(m_placement, m_class) (new (m_placement, sizeof(m_class), "") m_class)
+template <class T>
+_ALWAYS_INLINE_ T *_post_initialize(T *p_obj) {
+	postinitialize_handler(p_obj);
+	return p_obj;
+}
+
+#define memnew(m_class) _post_initialize(new ("") m_class)
+
+#define memnew_placement(m_placement, m_class) _post_initialize(new (m_placement, sizeof(m_class), "") m_class)
 
 template <class T>
 void memdelete(T *p_class, typename std::enable_if<!std::is_base_of_v<godot::Wrapped, T>>::type * = 0) {
@@ -90,7 +91,7 @@ void memdelete(T *p_class, typename std::enable_if<!std::is_base_of_v<godot::Wra
 
 template <class T, std::enable_if_t<std::is_base_of_v<godot::Wrapped, T>, bool> = true>
 void memdelete(T *p_class) {
-	godot::internal::interface->object_destroy(p_class->_owner);
+	godot::internal::gdn_interface->object_destroy(p_class->_owner);
 }
 
 #define memnew_arr(m_class, m_count) memnew_arr_template<m_class>(m_count)

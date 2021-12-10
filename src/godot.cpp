@@ -41,7 +41,7 @@ namespace godot {
 
 namespace internal {
 
-const GDNativeInterface *interface = nullptr;
+const GDNativeInterface *gdn_interface = nullptr;
 GDNativeExtensionClassLibraryPtr library = nullptr;
 void *token = nullptr;
 
@@ -51,7 +51,7 @@ GDExtensionBinding::Callback GDExtensionBinding::init_callbacks[GDNATIVE_MAX_INI
 GDExtensionBinding::Callback GDExtensionBinding::terminate_callbacks[GDNATIVE_MAX_INITIALIZATION_LEVEL] = {};
 
 GDNativeBool GDExtensionBinding::init(const GDNativeInterface *p_interface, const GDNativeExtensionClassLibraryPtr p_library, GDNativeInitialization *r_initialization) {
-	internal::interface = p_interface;
+	internal::gdn_interface = p_interface;
 	internal::library = p_library;
 	internal::token = p_library;
 
@@ -89,17 +89,6 @@ void GDExtensionBinding::deinitialize_level(void *userdata, GDNativeInitializati
 	if (terminate_callbacks[p_level]) {
 		terminate_callbacks[p_level]();
 	}
-}
-
-void *GDExtensionBinding::create_instance_callback(void *p_token, void *p_instance) {
-	ERR_FAIL_COND_V_MSG(p_token != internal::library, nullptr, "Asking for creating instance with invalid token.");
-	Wrapped *wrapped = memnew(Wrapped(p_instance));
-	return wrapped;
-}
-
-void GDExtensionBinding::free_instance_callback(void *p_token, void *p_instance, void *p_binding) {
-	ERR_FAIL_COND_MSG(p_token != internal::library, "Asking for freeing instance with invalid token.");
-	memdelete((Wrapped *)p_binding);
 }
 
 void GDExtensionBinding::InitObject::register_core_initializer(Callback p_core_init) const {
@@ -143,7 +132,7 @@ void GDExtensionBinding::InitObject::register_driver_terminator(Callback p_drive
 }
 
 GDNativeBool GDExtensionBinding::InitObject::init() const {
-	return GDExtensionBinding::init(interface, library, initialization);
+	return GDExtensionBinding::init(gdn_interface, library, initialization);
 }
 
 } // namespace godot

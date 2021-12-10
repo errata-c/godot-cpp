@@ -31,6 +31,12 @@
 #ifndef EXAMPLE_CLASS_H
 #define EXAMPLE_CLASS_H
 
+// We don't need windows.h in this plugin but many others do and it throws up on itself all the time
+// So best to include it and make sure CI warns us when we use something Microsoft took for their own goals....
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/classes/viewport.hpp>
@@ -70,6 +76,9 @@ public:
 		CONSTANT_WITHOUT_ENUM = 314,
 	};
 
+	Example();
+	~Example();
+
 	// Functions.
 	void simple_func();
 	void simple_const_func() const;
@@ -79,6 +88,9 @@ public:
 	Ref<ExampleRef> extended_ref_checks(Ref<ExampleRef> p_ref) const;
 	Variant varargs_func(const Variant **args, GDNativeInt arg_count, GDNativeCallError &error);
 	void emit_custom_signal(const String &name, int value);
+
+	Array test_array() const;
+	Dictionary test_dictionary() const;
 
 	// Property.
 	void set_custom_position(const Vector2 &pos);

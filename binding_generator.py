@@ -222,6 +222,9 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
     if class_name == "String":
         result.append("#include <godot_cpp/variant/char_string.hpp>")
 
+    if class_name == "Array":
+        result.append("#include <godot_cpp/variant/array_helpers.hpp>")
+
     for include in fully_used_classes:
         result.append(f"#include <godot_cpp/{get_include_path(include)}>")
 
@@ -424,6 +427,12 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
         result.append(f"\tconst char32_t &operator[](int p_index) const;")
         result.append(f"\tchar32_t &operator[](int p_index);")
 
+    if class_name == "Array":
+        result.append("\ttemplate <class... Args>")
+        result.append("\tstatic Array make(Args... args) {")
+        result.append("\t\treturn helpers::append_all(Array(), args...);")
+        result.append("\t}")
+
     if is_packed_array(class_name):
         return_type = correct_type(builtin_api["indexing_return_type"])
         if class_name == "PackedByteArray":
@@ -434,6 +443,14 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
             return_type = "float"
         result.append(f"\tconst " + return_type + f" &operator[](int p_index) const;")
         result.append(f"\t" + return_type + f" &operator[](int p_index);")
+
+    if class_name == "Array":
+        result.append(f"\tconst Variant &operator[](int p_index) const;")
+        result.append(f"\tVariant &operator[](int p_index);")
+
+    if class_name == "Dictionary":
+        result.append(f"\tconst Variant &operator[](const Variant &p_key) const;")
+        result.append(f"\tVariant &operator[](const Variant &p_key);")
 
     result.append("};")
 
@@ -499,58 +516,58 @@ def generate_builtin_class_source(builtin_api, size, used_classes, fully_used_cl
     if "constructors" in builtin_api:
         for constructor in builtin_api["constructors"]:
             result.append(
-                f'\t_method_bindings.constructor_{constructor["index"]} = internal::interface->variant_get_ptr_constructor({enum_type_name}, {constructor["index"]});'
+                f'\t_method_bindings.constructor_{constructor["index"]} = internal::gdn_interface->variant_get_ptr_constructor({enum_type_name}, {constructor["index"]});'
             )
 
     if builtin_api["has_destructor"]:
         result.append(
-            f"\t_method_bindings.destructor = internal::interface->variant_get_ptr_destructor({enum_type_name});"
+            f"\t_method_bindings.destructor = internal::gdn_interface->variant_get_ptr_destructor({enum_type_name});"
         )
 
     if "methods" in builtin_api:
         for method in builtin_api["methods"]:
             # TODO: Add error check for hash mismatch.
             result.append(
-                f'\t_method_bindings.method_{method["name"]} = internal::interface->variant_get_ptr_builtin_method({enum_type_name}, "{method["name"]}", {method["hash"]});'
+                f'\t_method_bindings.method_{method["name"]} = internal::gdn_interface->variant_get_ptr_builtin_method({enum_type_name}, "{method["name"]}", {method["hash"]});'
             )
 
     if "members" in builtin_api:
         for member in builtin_api["members"]:
             result.append(
-                f'\t_method_bindings.member_{member["name"]}_setter = internal::interface->variant_get_ptr_setter({enum_type_name}, "{member["name"]}");'
+                f'\t_method_bindings.member_{member["name"]}_setter = internal::gdn_interface->variant_get_ptr_setter({enum_type_name}, "{member["name"]}");'
             )
             result.append(
-                f'\t_method_bindings.member_{member["name"]}_getter = internal::interface->variant_get_ptr_getter({enum_type_name}, "{member["name"]}");'
+                f'\t_method_bindings.member_{member["name"]}_getter = internal::gdn_interface->variant_get_ptr_getter({enum_type_name}, "{member["name"]}");'
             )
 
     if "indexing_return_type" in builtin_api:
         result.append(
-            f"\t_method_bindings.indexed_setter = internal::interface->variant_get_ptr_indexed_setter({enum_type_name});"
+            f"\t_method_bindings.indexed_setter = internal::gdn_interface->variant_get_ptr_indexed_setter({enum_type_name});"
         )
         result.append(
-            f"\t_method_bindings.indexed_getter = internal::interface->variant_get_ptr_indexed_getter({enum_type_name});"
+            f"\t_method_bindings.indexed_getter = internal::gdn_interface->variant_get_ptr_indexed_getter({enum_type_name});"
         )
 
     if "is_keyed" in builtin_api and builtin_api["is_keyed"]:
         result.append(
-            f"\t_method_bindings.keyed_setter = internal::interface->variant_get_ptr_keyed_setter({enum_type_name});"
+            f"\t_method_bindings.keyed_setter = internal::gdn_interface->variant_get_ptr_keyed_setter({enum_type_name});"
         )
         result.append(
-            f"\t_method_bindings.keyed_getter = internal::interface->variant_get_ptr_keyed_getter({enum_type_name});"
+            f"\t_method_bindings.keyed_getter = internal::gdn_interface->variant_get_ptr_keyed_getter({enum_type_name});"
         )
         result.append(
-            f"\t_method_bindings.keyed_checker = internal::interface->variant_get_ptr_keyed_checker({enum_type_name});"
+            f"\t_method_bindings.keyed_checker = internal::gdn_interface->variant_get_ptr_keyed_checker({enum_type_name});"
         )
 
     if "operators" in builtin_api:
         for operator in builtin_api["operators"]:
             if "right_type" in operator:
                 result.append(
-                    f'\t_method_bindings.operator_{get_operator_id_name(operator["name"])}_{operator["right_type"]} = internal::interface->variant_get_ptr_operator_evaluator(GDNATIVE_VARIANT_OP_{get_operator_id_name(operator["name"]).upper()}, {enum_type_name}, GDNATIVE_VARIANT_TYPE_{camel_to_snake(operator["right_type"]).upper()});'
+                    f'\t_method_bindings.operator_{get_operator_id_name(operator["name"])}_{operator["right_type"]} = internal::gdn_interface->variant_get_ptr_operator_evaluator(GDNATIVE_VARIANT_OP_{get_operator_id_name(operator["name"]).upper()}, {enum_type_name}, GDNATIVE_VARIANT_TYPE_{camel_to_snake(operator["right_type"]).upper()});'
                 )
             else:
                 result.append(
-                    f'\t_method_bindings.operator_{get_operator_id_name(operator["name"])} = internal::interface->variant_get_ptr_operator_evaluator(GDNATIVE_VARIANT_OP_{get_operator_id_name(operator["name"]).upper()}, {enum_type_name}, GDNATIVE_VARIANT_TYPE_NIL);'
+                    f'\t_method_bindings.operator_{get_operator_id_name(operator["name"])} = internal::gdn_interface->variant_get_ptr_operator_evaluator(GDNATIVE_VARIANT_OP_{get_operator_id_name(operator["name"]).upper()}, {enum_type_name}, GDNATIVE_VARIANT_TYPE_NIL);'
                 )
 
     result.append("}")
@@ -594,7 +611,10 @@ def generate_builtin_class_source(builtin_api, size, used_classes, fully_used_cl
 
     # Move constructor.
     result.append(f"{class_name}::{class_name}({class_name} &&other) {{")
-    result.append("\tstd::swap(opaque, other.opaque);")
+    if needs_copy_instead_of_move(class_name) and copy_constructor_index >= 0:
+        result.append(f"\tinternal::_call_builtin_constructor(_method_bindings.constructor_{copy_constructor_index}, &opaque, &other);")
+    else:
+        result.append("\tstd::swap(opaque, other.opaque);")
     result.append("}")
     result.append("")
 
@@ -709,7 +729,10 @@ def generate_builtin_class_source(builtin_api, size, used_classes, fully_used_cl
 
     # Move assignment.
     result.append(f"{class_name} &{class_name}::operator=({class_name} &&other) {{")
-    result.append("\tstd::swap(opaque, other.opaque);")
+    if needs_copy_instead_of_move(class_name) and copy_constructor_index >= 0:
+        result.append(f"\tinternal::_call_builtin_constructor(_method_bindings.constructor_{copy_constructor_index}, &opaque, &other);")
+    else:
+        result.append("\tstd::swap(opaque, other.opaque);")
     result.append("\treturn *this;")
     result.append("}")
 
@@ -891,9 +914,6 @@ def generate_engine_class_header(class_api, used_classes, fully_used_classes, us
     result.append("")
 
     result.append("public:")
-
-    # Constructor override, since parent Wrapped has protected constructor.
-    result.append(f"\t{class_name}() = default;")
     result.append("")
 
     if "enums" in class_api:
@@ -1012,13 +1032,13 @@ def generate_engine_class_source(class_api, used_classes, fully_used_classes, us
     if is_singleton:
         result.append(f"{class_name} *{class_name}::get_singleton() {{")
         result.append(
-            f'\tstatic GDNativeObjectPtr singleton_obj = internal::interface->global_get_singleton("{class_name}");'
+            f'\tstatic GDNativeObjectPtr singleton_obj = internal::gdn_interface->global_get_singleton("{class_name}");'
         )
         result.append("#ifdef DEBUG_ENABLED")
         result.append("\tERR_FAIL_COND_V(singleton_obj == nullptr, nullptr);")
         result.append("#endif // DEBUG_ENABLED")
         result.append(
-            f"\tstatic {class_name} *singleton = reinterpret_cast<{class_name} *>(internal::interface->object_get_instance_binding(singleton_obj, internal::token, &{class_name}::___binding_callbacks));"
+            f"\tstatic {class_name} *singleton = reinterpret_cast<{class_name} *>(internal::gdn_interface->object_get_instance_binding(singleton_obj, internal::token, &{class_name}::___binding_callbacks));"
         )
         result.append("\treturn singleton;")
         result.append("}")
@@ -1038,7 +1058,7 @@ def generate_engine_class_source(class_api, used_classes, fully_used_classes, us
 
             # Method body.
             result.append(
-                f'\tstatic GDNativeMethodBindPtr ___method_bind = internal::interface->classdb_get_method_bind("{class_name}", "{method["name"]}", {method["hash"]});'
+                f'\tstatic GDNativeMethodBindPtr ___method_bind = internal::gdn_interface->classdb_get_method_bind("{class_name}", "{method["name"]}", {method["hash"]});'
             )
             method_call = "\t"
             has_return = "return_value" in method and method["return_value"]["type"] != "void"
@@ -1080,7 +1100,7 @@ def generate_engine_class_source(class_api, used_classes, fully_used_classes, us
             else:  # vararg.
                 result.append("\tGDNativeCallError error;")
                 result.append("\tVariant ret;")
-                method_call += "internal::interface->object_method_bind_call(___method_bind, _owner, (const GDNativeVariantPtr *)args, arg_count, &ret, &error"
+                method_call += "internal::gdn_interface->object_method_bind_call(___method_bind, _owner, (const GDNativeVariantPtr *)args, arg_count, &ret, &error"
 
             if is_ref:
                 method_call += ")"  # Close Ref<> constructor.
@@ -1231,7 +1251,7 @@ def generate_utility_functions(api, output_dir):
         # Function body.
 
         source.append(
-            f'\tstatic GDNativePtrUtilityFunction ___function = internal::interface->variant_get_ptr_utility_function("{function["name"]}", {function["hash"]});'
+            f'\tstatic GDNativePtrUtilityFunction ___function = internal::gdn_interface->variant_get_ptr_utility_function("{function["name"]}", {function["hash"]});'
         )
         has_return = "return_type" in function and function["return_type"] != "void"
         if has_return:
@@ -1547,6 +1567,13 @@ def is_packed_array(type_name):
         "PackedVector3Array",
     ]
 
+def needs_copy_instead_of_move(type_name):
+    """
+    Those are types which need initialised data or we'll get warning spam so need a copy instead of move.
+    """
+    return type_name in [
+        "Dictionary",
+    ]
 
 def is_enum(type_name):
     return type_name.startswith("enum::")

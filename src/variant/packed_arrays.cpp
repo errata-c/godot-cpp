@@ -32,6 +32,8 @@
 
 #include <godot_cpp/godot.hpp>
 
+#include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
 #include <godot_cpp/variant/packed_float32_array.hpp>
@@ -45,83 +47,103 @@
 namespace godot {
 
 const uint8_t &PackedByteArray::operator[](int p_index) const {
-	return *internal::interface->packed_byte_array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_byte_array_operator_index_const((GDNativeTypePtr *)this, p_index);
 }
 
 uint8_t &PackedByteArray::operator[](int p_index) {
-	return *internal::interface->packed_byte_array_operator_index((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_byte_array_operator_index((GDNativeTypePtr *)this, p_index);
 }
 
 const Color &PackedColorArray::operator[](int p_index) const {
-	const Color *color = (const Color *)internal::interface->packed_color_array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	const Color *color = (const Color *)internal::gdn_interface->packed_color_array_operator_index_const((GDNativeTypePtr *)this, p_index);
 	return *color;
 }
 
 Color &PackedColorArray::operator[](int p_index) {
-	Color *color = (Color *)internal::interface->packed_color_array_operator_index((GDNativeTypePtr *)this, p_index);
+	Color *color = (Color *)internal::gdn_interface->packed_color_array_operator_index((GDNativeTypePtr *)this, p_index);
 	return *color;
 }
 
 const float &PackedFloat32Array::operator[](int p_index) const {
-	return *internal::interface->packed_float32_array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_float32_array_operator_index_const((GDNativeTypePtr *)this, p_index);
 }
 
 float &PackedFloat32Array::operator[](int p_index) {
-	return *internal::interface->packed_float32_array_operator_index((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_float32_array_operator_index((GDNativeTypePtr *)this, p_index);
 }
 
 const double &PackedFloat64Array::operator[](int p_index) const {
-	return *internal::interface->packed_float64_array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_float64_array_operator_index_const((GDNativeTypePtr *)this, p_index);
 }
 
 double &PackedFloat64Array::operator[](int p_index) {
-	return *internal::interface->packed_float64_array_operator_index((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_float64_array_operator_index((GDNativeTypePtr *)this, p_index);
 }
 
 const int32_t &PackedInt32Array::operator[](int p_index) const {
-	return *internal::interface->packed_int32_array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_int32_array_operator_index_const((GDNativeTypePtr *)this, p_index);
 }
 
 int32_t &PackedInt32Array::operator[](int p_index) {
-	return *internal::interface->packed_int32_array_operator_index((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_int32_array_operator_index((GDNativeTypePtr *)this, p_index);
 }
 
 const int64_t &PackedInt64Array::operator[](int p_index) const {
-	return *internal::interface->packed_int64_array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_int64_array_operator_index_const((GDNativeTypePtr *)this, p_index);
 }
 
 int64_t &PackedInt64Array::operator[](int p_index) {
-	return *internal::interface->packed_int64_array_operator_index((GDNativeTypePtr *)this, p_index);
+	return *internal::gdn_interface->packed_int64_array_operator_index((GDNativeTypePtr *)this, p_index);
 }
 
 const String &PackedStringArray::operator[](int p_index) const {
-	const String *string = (const String *)internal::interface->packed_string_array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	const String *string = (const String *)internal::gdn_interface->packed_string_array_operator_index_const((GDNativeTypePtr *)this, p_index);
 	return *string;
 }
 
 String &PackedStringArray::operator[](int p_index) {
-	String *string = (String *)internal::interface->packed_string_array_operator_index((GDNativeTypePtr *)this, p_index);
+	String *string = (String *)internal::gdn_interface->packed_string_array_operator_index((GDNativeTypePtr *)this, p_index);
 	return *string;
 }
 
 const Vector2 &PackedVector2Array::operator[](int p_index) const {
-	const Vector2 *vec = (const Vector2 *)internal::interface->packed_vector2_array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	const Vector2 *vec = (const Vector2 *)internal::gdn_interface->packed_vector2_array_operator_index_const((GDNativeTypePtr *)this, p_index);
 	return *vec;
 }
 
 Vector2 &PackedVector2Array::operator[](int p_index) {
-	Vector2 *vec = (Vector2 *)internal::interface->packed_vector2_array_operator_index((GDNativeTypePtr *)this, p_index);
+	Vector2 *vec = (Vector2 *)internal::gdn_interface->packed_vector2_array_operator_index((GDNativeTypePtr *)this, p_index);
 	return *vec;
 }
 
 const Vector3 &PackedVector3Array::operator[](int p_index) const {
-	const Vector3 *vec = (const Vector3 *)internal::interface->packed_vector3_array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	const Vector3 *vec = (const Vector3 *)internal::gdn_interface->packed_vector3_array_operator_index_const((GDNativeTypePtr *)this, p_index);
 	return *vec;
 }
 
 Vector3 &PackedVector3Array::operator[](int p_index) {
-	Vector3 *vec = (Vector3 *)internal::interface->packed_vector3_array_operator_index((GDNativeTypePtr *)this, p_index);
+	Vector3 *vec = (Vector3 *)internal::gdn_interface->packed_vector3_array_operator_index((GDNativeTypePtr *)this, p_index);
 	return *vec;
+}
+
+const Variant &Array::operator[](int p_index) const {
+	const Variant *var = (const Variant *)internal::gdn_interface->array_operator_index_const((GDNativeTypePtr *)this, p_index);
+	return *var;
+}
+
+Variant &Array::operator[](int p_index) {
+	Variant *var = (Variant *)internal::gdn_interface->array_operator_index((GDNativeTypePtr *)this, p_index);
+	return *var;
+}
+
+const Variant &Dictionary::operator[](const Variant &p_key) const {
+	const Variant *var = (const Variant *)internal::gdn_interface->dictionary_operator_index_const((GDNativeTypePtr *)this, (GDNativeVariantPtr)&p_key);
+	return *var;
+}
+
+Variant &Dictionary::operator[](const Variant &p_key) {
+	Variant *var = (Variant *)internal::gdn_interface->dictionary_operator_index((GDNativeTypePtr *)this, (GDNativeVariantPtr)&p_key);
+	return *var;
 }
 
 } // namespace godot

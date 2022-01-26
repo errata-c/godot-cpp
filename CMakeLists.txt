@@ -187,7 +187,6 @@ set_target_properties(godot-cpp PROPERTIES
 
 add_library(godot::cpp ALIAS godot-cpp)
 
-
 if(IS_SUBPROJECT)
 	include("cmake/postconfig.cmake")
 else()

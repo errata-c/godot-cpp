@@ -116,37 +116,29 @@ else()
 endif()
 
 if(NOT "$CACHE{GODOT_CPP_BINDINGS_GENERATED}")
-	execute_process(COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_SOURCE_DIR}\", headers=True)"
+	execute_process(COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", headers=True)"
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		RESULT_VARIABLE HEADERS_FILE_LIST_RESULT
 		OUTPUT_VARIABLE HEADERS_FILE_LIST
-		ERROR_VARIABLE HEADERS_ERROR
 	)
-	set(HEADERS_FILE_LIST ${HEADERS_FILE_LIST})
 
-	if(NOT HEADERS_ERROR STREQUAL "")
-		message(FATAL_ERROR "${HEADERS_ERROR}")
-	endif()
-
-	execute_process(COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_SOURCE_DIR}\", sources=True)"
+	execute_process(COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", sources=True)"
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		RESULT_VARIABLE SOURCES_FILE_LIST_RESULT
 		OUTPUT_VARIABLE SOURCES_FILE_LIST
-		ERROR_VARIABLE SOURCES_ERROR
 	)
-	set(SOURCES_FILE_LIST ${SOURCES_FILE_LIST})
 
-	if(NOT SOURCES_ERROR STREQUAL "")
-		message(FATAL_ERROR "${SOURCES_ERROR}")
+	if("${HEADERS_FILE_LIST}" STREQUAL "" OR "${SOURCES_FILE_LIST}" STREQUAL "")
+		message(FATAL_ERROR "Failed to generate some of the bindings!")
+	else()
+		set(GODOT_CPP_BINDINGS_GENERATED TRUE CACHE INTERNAL "")
+		set(GODOT_CPP_HEADERS_FILE_LIST "${HEADERS_FILE_LIST}" CACHE INTERNAL "")
+		set(GODOT_CPP_SOURCES_FILE_LIST "${SOURCES_FILE_LIST}" CACHE INTERNAL "")
 	endif()
-
-	set(GODOT_CPP_BINDINGS_GENERATED TRUE CACHE INTERNAL "")
-	set(GODOT_CPP_HEADERS_FILE_LIST "${HEADERS_FILE_LIST}" CACHE INTERNAL "")
-	set(GODOT_CPP_SOURCES_FILE_LIST "${SOURCES_FILE_LIST}" CACHE INTERNAL "")
 endif()
 
 add_custom_command(OUTPUT ${GODOT_CPP_HEADERS_FILE_LIST} ${GODOT_CPP_SOURCES_FILE_LIST}
-	COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.generate_bindings(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${GENERATE_BINDING_PARAMETERS}\", \"${CMAKE_CURRENT_SOURCE_DIR}\")"
+	COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.generate_bindings(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${GENERATE_BINDING_PARAMETERS}\", \"${CMAKE_CURRENT_BINARY_DIR}\")"
 	VERBATIM
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 	MAIN_DEPENDENCY "${GODOT_CPP_CUSTOM_API_FILE}"
@@ -170,8 +162,8 @@ add_library(godot-cpp STATIC
 target_include_directories(godot-cpp
 	PUBLIC
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/core>"
-	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/gen>"
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/core>"
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/gen>"
 	
 	"$<INSTALL_INTERFACE:include>"
 	"$<INSTALL_INTERFACE:include/core>"
@@ -203,13 +195,13 @@ if(IS_SUBPROJECT)
 	include("cmake/postconfig.cmake")
 else()
 
-	# Install all the include files
-	install(DIRECTORY "include/" DESTINATION "include" 
-		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-	)
-
-	# Install the generated header files as well
-	install(DIRECTORY "${GODOT_CPP_HEADERS_DIR}/" DESTINATION "include"
+	# Install the normal include files, the c header files, and the generated files.
+	install(DIRECTORY 
+		"include/"
+		"${GODOT_CPP_HEADERS_DIR}/"
+		"${CMAKE_CURRENT_BINARY_DIR}/include"
+	
+		DESTINATION "include"
 		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 	)
 

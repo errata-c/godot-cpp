@@ -108,12 +108,13 @@ else()
 endif()
 
 # Generate source from the bindings file
-find_package(Python3 3.4 REQUIRED) # pathlib should be present
-if(GENERATE_TEMPLATE_GET_NODE)
+find_package(Python3 3.4 REQUIRED)
+if(GODOT_CPP_GENERATE_TEMPLATE_GET_NODE)
 	set(GENERATE_BINDING_PARAMETERS "True")
 else()
 	set(GENERATE_BINDING_PARAMETERS "False")
 endif()
+
 
 if(NOT "$CACHE{GODOT_CPP_BINDINGS_GENERATED}")
 	message("Generating the file list for the bindings")

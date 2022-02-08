@@ -109,13 +109,14 @@ else()
 endif()
 
 # Generate source from the bindings file
-find_package(Python REQUIRED)
+find_package(Python3 3.4 REQUIRED)
 if(GODOT_CPP_GENERATE_TEMPLATE_GET_NODE)
 	set(GENERATE_BINDING_PARAMETERS "True")
 else()
 	set(GENERATE_BINDING_PARAMETERS "False")
 endif()
 
+# Lists out the files that will actually be generated.
 if(NOT "$CACHE{GODOT_CPP_BINDINGS_GENERATED}")
 	execute_process(COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", headers=True, sources=True)"
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -132,6 +133,7 @@ if(NOT "$CACHE{GODOT_CPP_BINDINGS_GENERATED}")
 	set(GODOT_CPP_GENERATED_FILES_LIST "${GENERATED_FILES_LIST}" CACHE INTERNAL "")
 endif()
 
+# Command to regenerate the files if the list of files changes.
 add_custom_command(OUTPUT ${GODOT_CPP_GENERATED_FILES_LIST}
 	COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.generate_bindings(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${GENERATE_BINDING_PARAMETERS}\", \"${CMAKE_CURRENT_BINARY_DIR}\")"
 	VERBATIM

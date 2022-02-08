@@ -108,7 +108,7 @@ else()
 endif()
 
 # Generate source from the bindings file
-find_package(Python REQUIRED)
+find_package(Python3 3.4 REQUIRED)
 if(GODOT_CPP_GENERATE_TEMPLATE_GET_NODE)
 	set(GENERATE_BINDING_PARAMETERS "True")
 else()

@@ -116,12 +116,17 @@ else()
 endif()
 
 if(NOT "$CACHE{GODOT_CPP_BINDINGS_GENERATED}")
+	message("Generating the file list for the bindings")
 	execute_process(COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_SOURCE_DIR}\", headers=True)"
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		RESULT_VARIABLE HEADERS_FILE_LIST_RESULT
 		OUTPUT_VARIABLE HEADERS_FILE_LIST
 		ERROR_VARIABLE HEADERS_ERROR
 	)
+	message("RESULT_VARIABLE: ${HEADERS_FILE_LIST_RESULT}")
+	message("OUTPUT_VARIABLE: ${HEADERS_FILE_LIST}")
+	message("ERROR_VARIABLE: ${HEADERS_ERROR}")
+
 	set(HEADERS_FILE_LIST ${HEADERS_FILE_LIST})
 
 	if(NOT HEADERS_ERROR STREQUAL "")

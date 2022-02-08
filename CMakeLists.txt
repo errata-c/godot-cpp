@@ -201,7 +201,7 @@ else()
 	install(DIRECTORY 
 		"include/"
 		"${GODOT_CPP_HEADERS_DIR}/"
-		"${CMAKE_CURRENT_BINARY_DIR}/include"
+		"${CMAKE_CURRENT_BINARY_DIR}/include/"
 	
 		DESTINATION "include"
 		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"

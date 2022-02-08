@@ -108,16 +108,42 @@ else()
 endif()
 
 # Generate source from the bindings file
+<<<<<<< HEAD
 find_package(Python3 3.4 REQUIRED)
 if(GODOT_CPP_GENERATE_TEMPLATE_GET_NODE)
+=======
+find_package(Python3 3.4 REQUIRED) # pathlib should be present
+if(GENERATE_TEMPLATE_GET_NODE)
+>>>>>>> base/3.4
 	set(GENERATE_BINDING_PARAMETERS "True")
 else()
 	set(GENERATE_BINDING_PARAMETERS "False")
 endif()
 
+<<<<<<< HEAD
 if(NOT "$CACHE{GODOT_CPP_BINDINGS_GENERATED}")
 	message("Generating the file list for the bindings")
 	execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", headers=True)"
+=======
+message(STATUS "Generating Bindings")
+execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", headers=True)"
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	RESULT_VARIABLE HEADERS_FILE_LIST_RESULT
+	OUTPUT_VARIABLE HEADERS_FILE_LIST
+)
+set(HEADERS_FILE_LIST ${HEADERS_FILE_LIST})
+
+execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", sources=True)"
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	RESULT_VARIABLE SOURCES_FILE_LIST_RESULT
+	OUTPUT_VARIABLE SOURCES_FILE_LIST
+)
+set(SOURCES_FILE_LIST ${SOURCES_FILE_LIST})
+
+add_custom_command(OUTPUT ${HEADERS_FILE_LIST} ${SOURCES_FILE_LIST}
+		COMMAND "${Python3_EXECUTABLE}" "-c" "import binding_generator; binding_generator.generate_bindings(\"${GODOT_CUSTOM_API_FILE}\", \"${GENERATE_BINDING_PARAMETERS}\", \"${CMAKE_CURRENT_BINARY_DIR}\")"
+		VERBATIM
+>>>>>>> base/3.4
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		RESULT_VARIABLE HEADERS_FILE_LIST_RESULT
 		OUTPUT_VARIABLE HEADERS_FILE_LIST

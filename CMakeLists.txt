@@ -117,35 +117,35 @@ else()
 endif()
 
 # Lists out the files that will actually be generated.
-if(NOT "$CACHE{GODOT_CPP_BINDINGS_GENERATED}")
-	execute_process(COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", headers=True, sources=True)"
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		RESULT_VARIABLE GENERATED_FILES_LIST_RESULT
-		OUTPUT_VARIABLE GENERATED_FILES_LIST
-		ERROR_VARIABLE GENERATION_ERROR
-	)
+execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import binding_generator; binding_generator.print_file_list(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${CMAKE_CURRENT_BINARY_DIR}\", headers=True, sources=True)"
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	RESULT_VARIABLE GENERATION_RESULT
+	OUTPUT_VARIABLE GODOT_CPP_GENERATED_FILES_LIST
+	ERROR_VARIABLE GENERATION_ERROR
+)
 
-	if(NOT GENERATION_ERROR STREQUAL "")
-		message(FATAL_ERROR "${GENERATION_ERROR}")
-	endif()
-
-	set(GODOT_CPP_BINDINGS_GENERATED TRUE CACHE INTERNAL "")
-	set(GODOT_CPP_GENERATED_FILES_LIST "${GENERATED_FILES_LIST}" CACHE INTERNAL "")
+if(NOT GENERATION_ERROR STREQUAL "")
+	message(FATAL_ERROR "${GENERATION_ERROR}")
 endif()
+	
+if("${GODOT_CPP_GENERATED_FILES_LIST}" STREQUAL "")
+	message(FATAL_ERROR "Failed to generate the file list for the bindings!")
+endif()
+
 
 # Command to regenerate the files if the list of files changes.
 add_custom_command(OUTPUT ${GODOT_CPP_GENERATED_FILES_LIST}
-	COMMAND "${Python_EXECUTABLE}" "-c" "import binding_generator; binding_generator.generate_bindings(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${GENERATE_BINDING_PARAMETERS}\", \"${CMAKE_CURRENT_BINARY_DIR}\")"
+	COMMAND "${Python3_EXECUTABLE}" "-c" "import binding_generator; binding_generator.generate_bindings(\"${GODOT_CPP_CUSTOM_API_FILE}\", \"${GENERATE_BINDING_PARAMETERS}\", \"${CMAKE_CURRENT_BINARY_DIR}\")"
 	VERBATIM
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-	MAIN_DEPENDENCY "${GODOT_CPP_CUSTOM_API_FILE}"
-	DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/binding_generator.py"
+	MAIN_DEPENDENCY ${GODOT_CPP_CUSTOM_API_FILE}
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/binding_generator.py
 	COMMENT "Generating Bindings"
 )
 
 # Get Sources
-file(GLOB_RECURSE CORE_SOURCES "src/core/*.c**")
-file(GLOB_RECURSE CORE_HEADERS "include/core/*.h**")
+file(GLOB_RECURSE CORE_SOURCES "src/*.c**")
+file(GLOB_RECURSE CORE_HEADERS "include/*.h**")
 
 # Define the godot-cpp library
 add_library(godot-cpp STATIC 
@@ -169,6 +169,7 @@ target_include_directories(godot-cpp
 	"$<INSTALL_INTERFACE:include>"
 )
 target_compile_definitions(godot-cpp PUBLIC 
+	"$<$<CXX_COMPILER_ID:MSVC>:TYPED_METHOD_BIND>"
 	"$<IF:$<CONFIG:Debug,RelWithDebInfo>,_DEBUG,NDEBUG>" 
 	"$<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS>"
 	"$<$<CONFIG:Debug>:DEBUG_ENABLED>"
@@ -193,13 +194,13 @@ if(IS_SUBPROJECT)
 	include("cmake/postconfig.cmake")
 else()
 
-	# Install all the include files
-	install(DIRECTORY "include/" DESTINATION "include" 
-		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-	)
+	# Install the required header files
+	install(DIRECTORY 
+		"${GODOT_CPP_HEADERS_DIR}/" 
+		"include/"
+		"${CMAKE_CURRENT_BINARY_DIR}/gen/include/"
 
-	# Install the generated header files as well
-	install(DIRECTORY "${GODOT_CPP_HEADERS_DIR}/" DESTINATION "include"
+		DESTINATION "include"
 		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 	)
 

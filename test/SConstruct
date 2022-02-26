@@ -21,7 +21,16 @@ opts = Variables([], ARGUMENTS)
 opts.Add(EnumVariable("target", "Compilation target", "debug", ["d", "debug", "r", "release"]))
 opts.Add(EnumVariable("platform", "Compilation platform", host_platform, ["", "windows", "x11", "linux", "osx"]))
 opts.Add(
+<<<<<<< HEAD
     EnumVariable("p", "Compilation target, alias for 'platform'", host_platform, ["", "windows", "x11", "linux", "osx"])
+=======
+    EnumVariable(
+        "p",
+        "Compilation target, alias for 'platform'",
+        host_platform,
+        ["", "windows", "x11", "linux", "osx"],
+    )
+>>>>>>> f230e51 ([3.x] Run black format on SConstruct files and bindings generator)
 )
 opts.Add(EnumVariable("bits", "Target platform bits", "64", ("32", "64")))
 opts.Add(BoolVariable("use_llvm", "Use the LLVM / Clang compiler", "no"))

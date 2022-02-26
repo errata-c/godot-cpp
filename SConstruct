@@ -107,7 +107,14 @@ opts.Add(BoolVariable("use_mingw", "Use the MinGW compiler instead of MSVC - onl
 opts.Add(EnumVariable("target", "Compilation target", "debug", allowed_values=("debug", "release"), ignorecase=2))
 opts.Add(
     PathVariable(
+<<<<<<< HEAD
         "headers_dir", "Path to the directory containing Godot headers", "godot-headers", PathVariable.PathIsDir
+=======
+        "headers_dir",
+        "Path to the directory containing Godot headers",
+        "godot-headers",
+        PathVariable.PathIsDir,
+>>>>>>> f230e51 ([3.x] Run black format on SConstruct files and bindings generator)
     )
 )
 opts.Add(PathVariable("custom_api_file", "Path to a custom JSON API file", None, PathVariable.PathIsFile))
@@ -119,6 +126,7 @@ opts.Add(
         allowed_values=["yes", "no", "auto", "true"],
         ignorecase=2,
     )
+<<<<<<< HEAD
 )
 opts.Add(EnumVariable("android_arch", "Target Android architecture", "armv7", ["armv7", "arm64v8", "x86", "x86_64"]))
 opts.Add("macos_deployment_target", "macOS deployment target", "default")
@@ -142,6 +150,44 @@ opts.Add(
     os.environ.get("ANDROID_NDK_ROOT", None),
 )
 opts.Add(BoolVariable("generate_template_get_node", "Generate a template version of the Node class's get_node.", True))
+=======
+)
+opts.Add(
+    EnumVariable(
+        "android_arch",
+        "Target Android architecture",
+        "armv7",
+        ["armv7", "arm64v8", "x86", "x86_64"],
+    )
+)
+opts.Add("macos_deployment_target", "macOS deployment target", "default")
+opts.Add("macos_sdk_path", "macOS SDK path", "")
+opts.Add(EnumVariable("macos_arch", "Target macOS architecture", "universal", ["universal", "x86_64", "arm64"]))
+opts.Add(EnumVariable("ios_arch", "Target iOS architecture", "arm64", ["armv7", "arm64", "x86_64"]))
+opts.Add(BoolVariable("ios_simulator", "Target iOS Simulator", False))
+opts.Add(
+    "IPHONEPATH",
+    "Path to iPhone toolchain",
+    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain",
+)
+opts.Add(
+    "android_api_level",
+    "Target Android API level",
+    "18" if ARGUMENTS.get("android_arch", "armv7") in ["armv7", "x86"] else "21",
+)
+opts.Add(
+    "ANDROID_NDK_ROOT",
+    "Path to your Android NDK installation. By default, uses ANDROID_NDK_ROOT from your defined environment variables.",
+    os.environ.get("ANDROID_NDK_ROOT", None),
+)
+opts.Add(
+    BoolVariable(
+        "generate_template_get_node",
+        "Generate a template version of the Node class's get_node.",
+        True,
+    )
+)
+>>>>>>> f230e51 ([3.x] Run black format on SConstruct files and bindings generator)
 
 opts.Update(env)
 Help(opts.GenerateHelpText(env))
@@ -376,6 +422,7 @@ elif env["platform"] == "android":
     # Setup tools
     env["CC"] = toolchain + "/bin/clang"
     env["CXX"] = toolchain + "/bin/clang++"
+<<<<<<< HEAD
     env["AR"] = toolchain + "/bin/llvm-ar"
     env["AS"] = toolchain + "/bin/llvm-as"
     env["LD"] = toolchain + "/bin/llvm-ld"
@@ -384,6 +431,20 @@ elif env["platform"] == "android":
 
     env.Append(
         CCFLAGS=["--target=" + arch_info["target"] + env["android_api_level"], "-march=" + arch_info["march"], "-fPIC"]
+=======
+    env["AR"] = toolchain + "/bin/" + arch_info["tool_path"] + "-ar"
+    env["AS"] = toolchain + "/bin/" + arch_info["tool_path"] + "-as"
+    env["LD"] = toolchain + "/bin/" + arch_info["tool_path"] + "-ld"
+    env["STRIP"] = toolchain + "/bin/" + arch_info["tool_path"] + "-strip"
+    env["RANLIB"] = toolchain + "/bin/" + arch_info["tool_path"] + "-ranlib"
+
+    env.Append(
+        CCFLAGS=[
+            "--target=" + arch_info["target"] + env["android_api_level"],
+            "-march=" + arch_info["march"],
+            "-fPIC",
+        ]
+>>>>>>> f230e51 ([3.x] Run black format on SConstruct files and bindings generator)
     )
     env.Append(CCFLAGS=arch_info["ccflags"])
 

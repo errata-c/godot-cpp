@@ -31,8 +31,8 @@
 # Generate the buildfiles in a sub directory to not clutter the root directory with build files:
 # mkdir build && cd build && cmake -G "Unix Makefiles" .. && cmake --build .
 
-# Version 3.16 is the newest version supported by Ubuntu
-cmake_minimum_required(VERSION 3.16)
+# We need version 3.21 for the runtime dll checks.
+cmake_minimum_required(VERSION 3.21)
 
 project(GODOT_CPP
 VERSION 3.4.1

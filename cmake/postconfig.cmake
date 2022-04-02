@@ -174,37 +174,48 @@ function(install_gdnlib)
 		"${GD_CURRENT_BINARY_DIR}/update_gdnlib.cmake"
 		@ONLY
 	)
+
+	# Build a list of dependencies at install time, to check to see if the full list is handled.
 	
-	# Check each dependency to see if its a proper target or library file, then add it to a list for installation.
-	foreach(GD_DEP IN LISTS GD_DEPENDENCIES)
-		if(TARGET "${GD_DEP}")
-			# Check if the target is a shared library.
-			get_target_property(TARGET_TYPE ${GD_DEP} TYPE)
-			if(NOT ${TARGET_TYPE} STREQUAL "SHARED_LIBRARY")
-				continue()
-			endif()
+	if(DEFINED GD_DEPENDENCIES)
+		# Check each dependency to see if its a proper target or library file, then add it to a list for installation.
+		foreach(GD_DEP IN LISTS GD_DEPENDENCIES)
+			if(TARGET "${GD_DEP}")
+				# Check if the target is a shared library.
+				get_target_property(TARGET_TYPE ${GD_DEP} TYPE)
+				if(NOT ${TARGET_TYPE} STREQUAL "SHARED_LIBRARY")
+					continue()
+				endif()
 
-			list(APPEND GD_DEPENDENCY_FILES "$<TARGET_FILE:${GD_DEP}>")
-		elseif(EXISTS "${GD_DEP}")
-			get_filename_component(GD_DEP_EXT "${GD_DEP}" LAST_EXT)
-			string(TOLOWER "${GD_DEP_EXT}" GD_DEP_EXT)
+				list(APPEND GD_DEPENDENCY_FILES "$<TARGET_FILE:${GD_DEP}>")
+			elseif(EXISTS "${GD_DEP}")
+				get_filename_component(GD_DEP_EXT "${GD_DEP}" LAST_EXT)
+				string(TOLOWER "${GD_DEP_EXT}" GD_DEP_EXT)
 
-			# If the file has a valid extension for this platform, we can install it.
-			if("${GD_DEP_EXT}" IN_LIST "GD_EXT_${GD_PLATFORM_NAME}")
-				list(APPEND GD_DEPENDENCY_FILES "${GD_DEP}")
+				# If the file has a valid extension for this platform, we can install it.
+				if("${GD_DEP_EXT}" IN_LIST "GD_EXT_${GD_PLATFORM_NAME}")
+					list(APPEND GD_DEPENDENCY_FILES "${GD_DEP}")
+				else()
+					message(FATAL_ERROR "install_gdnlib: The library file '${GD_DEP}' has an incorrect file extension for the platform '${GD_PLATFORM_NAME}'!")
+				endif()
 			else()
-				message(FATAL_ERROR "install_gdnlib: The library file '${GD_DEP}' has an incorrect file extension for the platform '${GD_PLATFORM_NAME}'!")
+				message(FATAL_ERROR "install_gdnlib: Failed to find a target or library file '${GD_DEP}'!")
 			endif()
-		else()
-			message(FATAL_ERROR "install_gdnlib: Failed to find a target or library file '${GD_DEP}'!")
-		endif()
-	endforeach()
+		endforeach()
 
-	file(GENERATE
-		OUTPUT "${GD_CURRENT_BINARY_DIR}/gdnlib_target_files_$<CONFIG>.cmake"
-		CONTENT 
-		"set(GD_DEPENDENCY_FILES ${GD_DEPENDENCY_FILES})\nset(GD_TARGET_FILE \"$<TARGET_FILE:${GD_TARGET}>\")\n"
-	)
+		file(GENERATE
+			OUTPUT "${GD_CURRENT_BINARY_DIR}/gdnlib_target_files_$<CONFIG>.cmake"
+			CONTENT 
+			"set(GD_DEPENDENCY_FILES ${GD_DEPENDENCY_FILES})\nset(GD_TARGET_FILE \"$<TARGET_FILE:${GD_TARGET}>\")\n"
+		)
+	else()
+		# Just automatically find the deps
+		file(GENERATE
+			OUTPUT "${GD_CURRENT_BINARY_DIR}/gdnlib_target_files_$<CONFIG>.cmake"
+			CONTENT 
+			"set(GD_DEPENDENCY_FILES \"$<TARGET_RUNTIME_DLLS:${GD_TARGET}\")\nset(GD_TARGET_FILE \"$<TARGET_FILE:${GD_TARGET}>\")\n"
+		)
+	endif()
 
 	# Changed this because its the only way to know what the configuration type is at install time.
 	install(CODE "set(GD_INSTALL_CONFIG $<CONFIG>)\ninclude(${GD_CURRENT_BINARY_DIR}/update_gdnlib.cmake)"

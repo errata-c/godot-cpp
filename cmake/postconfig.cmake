@@ -213,7 +213,7 @@ function(install_gdnlib)
 		file(GENERATE
 			OUTPUT "${GD_CURRENT_BINARY_DIR}/gdnlib_target_files_$<CONFIG>.cmake"
 			CONTENT 
-			"set(GD_DEPENDENCY_FILES \"$<TARGET_RUNTIME_DLLS:${GD_TARGET}\")\nset(GD_TARGET_FILE \"$<TARGET_FILE:${GD_TARGET}>\")\n"
+			"set(GD_DEPENDENCY_FILES \"$<TARGET_RUNTIME_DLLS:${GD_TARGET}>\")\nset(GD_TARGET_FILE \"$<TARGET_FILE:${GD_TARGET}>\")\n"
 		)
 	endif()
 

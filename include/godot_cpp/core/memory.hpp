@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -41,6 +41,7 @@
 #include <type_traits>
 
 void *operator new(size_t p_size, const char *p_description); ///< operator new that takes a description and uses MemoryStaticPool
+void *operator new(size_t p_size, void *(*p_allocfunc)(size_t p_size)); ///< operator new that takes a description and uses MemoryStaticPool
 void *operator new(size_t p_size, void *p_pointer, size_t check, const char *p_description); ///< operator new that takes a description and uses a pointer to the preallocated memory
 
 _ALWAYS_INLINE_ void *operator new(size_t p_size, void *p_pointer, size_t check, const char *p_description) {
@@ -76,9 +77,34 @@ _ALWAYS_INLINE_ T *_post_initialize(T *p_obj) {
 	return p_obj;
 }
 
+#define memalloc(m_size) Memory::alloc_static(m_size)
+#define memrealloc(m_mem, m_size) Memory::realloc_static(m_mem, m_size)
+#define memfree(m_mem) Memory::free_static(m_mem)
+
 #define memnew(m_class) _post_initialize(new ("") m_class)
 
+#define memnew_allocator(m_class, m_allocator) _post_initialize(new (m_allocator::alloc) m_class)
 #define memnew_placement(m_placement, m_class) _post_initialize(new (m_placement, sizeof(m_class), "") m_class)
+
+// Generic comparator used in Map, List, etc.
+template <class T>
+struct Comparator {
+	_ALWAYS_INLINE_ bool operator()(const T &p_a, const T &p_b) const { return (p_a < p_b); }
+};
+
+class DefaultAllocator {
+public:
+	_ALWAYS_INLINE_ static void *alloc(size_t p_memory) { return Memory::alloc_static(p_memory); }
+	_ALWAYS_INLINE_ static void free(void *p_ptr) { Memory::free_static(p_ptr); }
+};
+
+template <class T>
+class DefaultTypedAllocator {
+public:
+	template <class... Args>
+	_ALWAYS_INLINE_ T *new_allocation(const Args &&...p_args) { return memnew(T(p_args...)); }
+	_ALWAYS_INLINE_ void delete_allocation(T *p_allocation) { memdelete(p_allocation); }
+};
 
 template <class T>
 void memdelete(T *p_class, typename std::enable_if<!std::is_base_of_v<godot::Wrapped, T>>::type * = 0) {
@@ -92,6 +118,15 @@ void memdelete(T *p_class, typename std::enable_if<!std::is_base_of_v<godot::Wra
 template <class T, std::enable_if_t<std::is_base_of_v<godot::Wrapped, T>, bool> = true>
 void memdelete(T *p_class) {
 	godot::internal::gdn_interface->object_destroy(p_class->_owner);
+}
+
+template <class T, class A>
+void memdelete_allocator(T *p_class) {
+	if (!__has_trivial_destructor(T)) {
+		p_class->~T();
+	}
+
+	A::free(p_class);
 }
 
 #define memnew_arr(m_class, m_count) memnew_arr_template<m_class>(m_count)
@@ -136,6 +171,19 @@ void memdelete_arr(T *p_class) {
 
 	Memory::free_static(ptr);
 }
+
+struct _GlobalNil {
+	int color = 1;
+	_GlobalNil *right;
+	_GlobalNil *left;
+	_GlobalNil *parent;
+
+	_GlobalNil();
+};
+
+struct _GlobalNilClass {
+	static _GlobalNil _nil;
+};
 
 } // namespace godot
 

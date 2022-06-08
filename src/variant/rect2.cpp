@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -30,6 +30,8 @@
 
 #include <godot_cpp/variant/rect2.hpp>
 
+#include <godot_cpp/variant/rect2i.hpp>
+#include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/transform2d.hpp>
 
 namespace godot {
@@ -266,6 +268,14 @@ next4:
 	}
 
 	return true;
+}
+
+Rect2::operator String() const {
+	return String(position) + ", " + String(size);
+}
+
+Rect2::operator Rect2i() const {
+	return Rect2i(position, size);
 }
 
 } // namespace godot

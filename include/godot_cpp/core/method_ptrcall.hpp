@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -185,27 +185,27 @@ struct PtrToArg<const T *> {
 };
 
 // Pointers.
-#define GDVIRTUAL_NATIVE_PTR(m_type)                                     \
-	template <>                                                          \
-	struct PtrToArg<m_type *> {                                          \
-		_FORCE_INLINE_ static m_type *convert(const void *p_ptr) {       \
-			return (m_type *)(*(void **)p_ptr);                          \
-		}                                                                \
-		typedef m_type *EncodeT;                                         \
-		_FORCE_INLINE_ static void encode(m_type *p_var, void *p_ptr) {  \
-			*((void **)p_ptr) = p_var;                                   \
-		}                                                                \
-	};                                                                   \
-                                                                         \
-	template <>                                                          \
-	struct PtrToArg<const m_type *> {                                    \
-		_FORCE_INLINE_ static const m_type *convert(const void *p_ptr) { \
-			return (const m_type *)(*(const void **)p_ptr);              \
-		}                                                                \
-		typedef const m_type *EncodeT;                                   \
-		_FORCE_INLINE_ static void encode(m_type *p_var, void *p_ptr) {  \
-			*((void **)p_ptr) = p_var;                                   \
-		}                                                                \
+#define GDVIRTUAL_NATIVE_PTR(m_type)                                                \
+	template <>                                                                     \
+	struct PtrToArg<m_type *> {                                                     \
+		_FORCE_INLINE_ static m_type *convert(const void *p_ptr) {                  \
+			return (m_type *)(*(void **)p_ptr);                                     \
+		}                                                                           \
+		typedef m_type *EncodeT;                                                    \
+		_FORCE_INLINE_ static void encode(m_type *p_var, void *p_ptr) {             \
+			*((void **)p_ptr) = p_var;                                              \
+		}                                                                           \
+	};                                                                              \
+                                                                                    \
+	template <>                                                                     \
+	struct PtrToArg<const m_type *> {                                               \
+		_FORCE_INLINE_ static const m_type *convert(const void *p_ptr) {            \
+			return (const m_type *)(*(const void **)p_ptr);                         \
+		}                                                                           \
+		typedef const m_type *EncodeT;                                              \
+		_FORCE_INLINE_ static void encode(const m_type *p_var, const void *p_ptr) { \
+			*((const void **)p_ptr) = p_var;                                        \
+		}                                                                           \
 	}
 
 GDVIRTUAL_NATIVE_PTR(bool);

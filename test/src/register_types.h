@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -31,7 +31,10 @@
 #ifndef EXAMPLE_REGISTER_TYPES_H
 #define EXAMPLE_REGISTER_TYPES_H
 
-void register_example_types();
-void unregister_example_types();
+#include <godot_cpp/core/class_db.hpp>
+using namespace godot;
+
+void initialize_example_module(ModuleInitializationLevel p_level);
+void uninitialize_example_module(ModuleInitializationLevel p_level);
 
 #endif // ! EXAMPLE_REGISTER_TYPES_H

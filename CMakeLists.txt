@@ -4,7 +4,8 @@
 # godot-cpp cmake arguments
 # GODOT_HEADERS_DIR:		This is where the gdnative include folder is (godot_source/modules/gdnative/include)
 # GODOT_CUSTOM_API_FILE:	This is if you have another path for the godot_api.json
-# 
+# FLOAT_TYPE				Floating-point precision (32, 64)
+#
 # Android cmake arguments
 # CMAKE_TOOLCHAIN_FILE:		The path to the android cmake toolchain ($ANDROID_NDK/build/cmake/android.toolchain.cmake)
 # ANDROID_NDK:				The path to the android ndk root folder
@@ -58,6 +59,17 @@ option(GODOT_CPP_GENERATE_TEMPLATE_GET_NODE "Generate a template version of the 
 # The default config directory is one that cmake's find_package function will automatically search for package config files.
 set(GODOT_CPP_CONFIG_DIR "share/godot-cpp" CACHE STRING "The relative directory to install godot-cpp package config files.")
 
+set(BUILD_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${BUILD_PATH}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${BUILD_PATH}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${BUILD_PATH}")
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
+SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
+SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
+
 # Default build type is Debug in the SConstruct
 if(CMAKE_BUILD_TYPE STREQUAL "" AND NOT CMAKE_CONFIGURATION_TYPES)
 	set(CMAKE_BUILD_TYPE Debug)
@@ -65,9 +77,18 @@ endif()
 
 set(GODOT_CPP_HEADERS_DIR "godot-headers" CACHE STRING 
 	"Location of the c-api header files, can be changed if you have a different set of headers to use")
-
 set(GODOT_CPP_CUSTOM_API_FILE "godot-headers/extension_api.json" CACHE STRING 
 	"Location of the api.json file, describing what to actually generate from the header files")
+
+set(FLOAT_TYPE_FLAG "float" CACHE STRING "")
+if(FLOAT_TYPE EQUAL 64)
+	set(FLOAT_TYPE_FLAG "double" CACHE STRING "")
+endif(FLOAT_TYPE EQUAL 64)
+
+set(BITS 32)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(BITS 64)
+endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 set(GODOT_COMPILE_FLAGS )
 set(GODOT_LINKER_FLAGS )
@@ -75,6 +96,7 @@ set(GODOT_LINKER_FLAGS )
 # Determine what the platform name and architecture is.
 # This creates the cache entries GD_PLATFORM_NAME and GD_PLATFORM_ARCH
 include("cmake/platform_checks.cmake")
+
 
 # using Visual Studio C++
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "^.*MSVC.*$")
@@ -131,7 +153,6 @@ endif()
 if("${GODOT_CPP_GENERATED_FILES_LIST}" STREQUAL "")
 	message(FATAL_ERROR "Failed to generate the file list for the bindings!")
 endif()
-
 
 # Command to regenerate the files if the list of files changes.
 add_custom_command(OUTPUT ${GODOT_CPP_GENERATED_FILES_LIST}

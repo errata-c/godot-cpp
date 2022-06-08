@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -32,17 +32,19 @@
 #define GODOT_VECTOR3_HPP
 
 #include <godot_cpp/core/math.hpp>
-#include <godot_cpp/variant/string.hpp>
 
 namespace godot {
 
 class Basis;
+class String;
 class Vector3i;
 
 class Vector3 {
-public:
-	_FORCE_INLINE_ GDNativeTypePtr ptr() const { return (void *)this; }
+	_FORCE_INLINE_ GDNativeTypePtr _native_ptr() const { return (void *)this; }
 
+	friend class Variant;
+
+public:
 	enum Axis {
 		AXIS_X,
 		AXIS_Y,
@@ -157,7 +159,6 @@ public:
 		y = p_y;
 		z = p_z;
 	}
-	Vector3(const Vector3i &p_ivec);
 };
 
 Vector3 Vector3::cross(const Vector3 &p_b) const {

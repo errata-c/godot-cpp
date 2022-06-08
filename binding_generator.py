@@ -6,9 +6,9 @@ import shutil
 from pathlib import Path
 
 
-def print_file_list(api_filepath, output_dir, headers=False, sources=False):
+def get_file_list(api_filepath, output_dir, headers=False, sources=False):
     api = {}
-    end = ";"
+    files = []
     with open(api_filepath) as api_file:
         api = json.load(api_file)
 
@@ -25,9 +25,9 @@ def print_file_list(api_filepath, output_dir, headers=False, sources=False):
         header_filename = include_gen_folder / "variant" / (camel_to_snake(builtin_class["name"]) + ".hpp")
         source_filename = source_gen_folder / "variant" / (camel_to_snake(builtin_class["name"]) + ".cpp")
         if headers:
-            print(str(header_filename.as_posix()), end=end)
+            files.append(str(header_filename.as_posix()))
         if sources:
-            print(str(source_filename.as_posix()), end=end)
+            files.append(str(source_filename.as_posix()))
 
     for engine_class in api["classes"]:
         # TODO: Properly setup this singleton since it conflicts with ClassDB in the bindings.
@@ -36,21 +36,45 @@ def print_file_list(api_filepath, output_dir, headers=False, sources=False):
         header_filename = include_gen_folder / "classes" / (camel_to_snake(engine_class["name"]) + ".hpp")
         source_filename = source_gen_folder / "classes" / (camel_to_snake(engine_class["name"]) + ".cpp")
         if headers:
-            print(str(header_filename.as_posix()), end=end)
+            files.append(str(header_filename.as_posix()))
         if sources:
-            print(str(source_filename.as_posix()), end=end)
+            files.append(str(source_filename.as_posix()))
 
     utility_functions_header_path = include_gen_folder / "variant" / "utility_functions.hpp"
     utility_functions_source_path = source_gen_folder / "variant" / "utility_functions.cpp"
     global_constants_header_path = include_gen_folder / "classes" / "global_constants.hpp"
     if headers:
-        print(str(utility_functions_header_path.as_posix()), end=end)
-        print(str(global_constants_header_path.as_posix()), end=end)
+        files.append(str(utility_functions_header_path.as_posix()))
+        files.append(str(global_constants_header_path.as_posix()))
     if sources:
-        print(str(utility_functions_source_path.as_posix()), end=end)
+        files.append(str(utility_functions_source_path.as_posix()))
+    return files
 
 
-def generate_bindings(api_filepath, use_template_get_node, output_dir="."):
+def print_file_list(api_filepath, output_dir, headers=False, sources=False):
+    end = ";"
+    for f in get_file_list(api_filepath, output_dir, headers, sources):
+        print(f, end=end)
+
+
+def scons_emit_files(target, source, env):
+    files = [env.File(f) for f in get_file_list(str(source[0]), target[0].abspath, True, True)]
+    env.Clean(files, target)
+    return [target[0]] + files, source
+
+
+def scons_generate_bindings(target, source, env):
+    generate_bindings(
+        str(source[0]),
+        env["generate_template_get_node"],
+        "32" if "32" in env["arch"] else "64",
+        "double" if (env["float"] == "64") else "float",
+        target[0].abspath,
+    )
+    return None
+
+
+def generate_bindings(api_filepath, use_template_get_node, bits="64", double="float", output_dir="."):
     api = None
 
     target_dir = Path(output_dir) / "gen"
@@ -61,8 +85,11 @@ def generate_bindings(api_filepath, use_template_get_node, output_dir="."):
     shutil.rmtree(target_dir, ignore_errors=True)
     target_dir.mkdir(parents=True)
 
+    print("Built-in type config: " + double + "_" + bits)
+
     generate_global_constants(api, target_dir)
-    generate_builtin_bindings(api, target_dir, "float_64")
+    generate_global_constant_binds(api, target_dir)
+    generate_builtin_bindings(api, target_dir, double + "_" + bits)
     generate_engine_classes_bindings(api, target_dir, use_template_get_node)
     generate_utility_functions(api, target_dir)
 
@@ -221,6 +248,8 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
     # Special cases.
     if class_name == "String":
         result.append("#include <godot_cpp/variant/char_string.hpp>")
+        result.append("#include <godot_cpp/variant/char_utils.hpp>")
+        result.append("#include <godot_cpp/variant/ucaps.hpp>")
 
     if class_name == "Array":
         result.append("#include <godot_cpp/variant/array_helpers.hpp>")
@@ -246,7 +275,7 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
     result.append(f"\tstatic constexpr size_t {snake_class_name}_SIZE = {size};")
     result.append(f"\tuint8_t opaque[{snake_class_name}_SIZE] = {{}};")
     result.append(
-        f"\t_FORCE_INLINE_ GDNativeTypePtr ptr() const {{ return const_cast<uint8_t (*)[{snake_class_name}_SIZE]>(&opaque); }}"
+        f"\t_FORCE_INLINE_ GDNativeTypePtr _native_ptr() const {{ return const_cast<uint8_t (*)[{snake_class_name}_SIZE]>(&opaque); }}"
     )
 
     result.append("")
@@ -378,6 +407,10 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
 
     # Special cases.
     if class_name == "String":
+        result.append("\tstatic String utf8(const char *from, int len = -1);")
+        result.append("\tvoid parse_utf8(const char *from, int len = -1);")
+        result.append("\tstatic String utf16(const char16_t *from, int len = -1);")
+        result.append("\tvoid parse_utf16(const char16_t *from, int len = -1);")
         result.append("\tCharString utf8() const;")
         result.append("\tCharString ascii() const;")
         result.append("\tChar16String utf16() const;")
@@ -426,6 +459,8 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
         result.append("bool operator!=(const char32_t *p_str) const;")
         result.append(f"\tconst char32_t &operator[](int p_index) const;")
         result.append(f"\tchar32_t &operator[](int p_index);")
+        result.append(f"\tconst char32_t *ptr() const;")
+        result.append(f"\tchar32_t *ptrw();")
 
     if class_name == "Array":
         result.append("\ttemplate <class... Args>")
@@ -443,6 +478,8 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
             return_type = "float"
         result.append(f"\tconst " + return_type + f" &operator[](int p_index) const;")
         result.append(f"\t" + return_type + f" &operator[](int p_index);")
+        result.append(f"\tconst " + return_type + f" *ptr() const;")
+        result.append(f"\t" + return_type + f" *ptrw();")
 
     if class_name == "Array":
         result.append(f"\tconst Variant &operator[](int p_index) const;")
@@ -612,7 +649,9 @@ def generate_builtin_class_source(builtin_api, size, used_classes, fully_used_cl
     # Move constructor.
     result.append(f"{class_name}::{class_name}({class_name} &&other) {{")
     if needs_copy_instead_of_move(class_name) and copy_constructor_index >= 0:
-        result.append(f"\tinternal::_call_builtin_constructor(_method_bindings.constructor_{copy_constructor_index}, &opaque, &other);")
+        result.append(
+            f"\tinternal::_call_builtin_constructor(_method_bindings.constructor_{copy_constructor_index}, &opaque, &other);"
+        )
     else:
         result.append("\tstd::swap(opaque, other.opaque);")
     result.append("}")
@@ -696,7 +735,7 @@ def generate_builtin_class_source(builtin_api, size, used_classes, fully_used_cl
                     (encode, arg_name) = get_encoded_arg("other", operator["right_type"], None)
                     result += encode
                     result.append(
-                        f'\treturn internal::_call_builtin_operator_ptr<{correct_type(operator["return_type"])}>(_method_bindings.operator_{get_operator_id_name(operator["name"])}_{operator["right_type"]}, (const GDNativeTypePtr)&opaque, (const GDNativeTypePtr){arg_name});'
+                        f'\treturn internal::_call_builtin_operator_ptr<{get_gdnative_type(correct_type(operator["return_type"]))}>(_method_bindings.operator_{get_operator_id_name(operator["name"])}_{operator["right_type"]}, (const GDNativeTypePtr)&opaque, (const GDNativeTypePtr){arg_name});'
                     )
                     result.append("}")
                 else:
@@ -704,7 +743,7 @@ def generate_builtin_class_source(builtin_api, size, used_classes, fully_used_cl
                         f'{correct_type(operator["return_type"])} {class_name}::operator{operator["name"].replace("unary", "")}() const {{'
                     )
                     result.append(
-                        f'\treturn internal::_call_builtin_operator_ptr<{correct_type(operator["return_type"])}>(_method_bindings.operator_{get_operator_id_name(operator["name"])}, (const GDNativeTypePtr)&opaque, (const GDNativeTypePtr)nullptr);'
+                        f'\treturn internal::_call_builtin_operator_ptr<{get_gdnative_type(correct_type(operator["return_type"]))}>(_method_bindings.operator_{get_operator_id_name(operator["name"])}, (const GDNativeTypePtr)&opaque, (const GDNativeTypePtr)nullptr);'
                     )
                     result.append("}")
                 result.append("")
@@ -730,7 +769,9 @@ def generate_builtin_class_source(builtin_api, size, used_classes, fully_used_cl
     # Move assignment.
     result.append(f"{class_name} &{class_name}::operator=({class_name} &&other) {{")
     if needs_copy_instead_of_move(class_name) and copy_constructor_index >= 0:
-        result.append(f"\tinternal::_call_builtin_constructor(_method_bindings.constructor_{copy_constructor_index}, &opaque, &other);")
+        result.append(
+            f"\tinternal::_call_builtin_constructor(_method_bindings.constructor_{copy_constructor_index}, &opaque, &other);"
+        )
     else:
         result.append("\tstd::swap(opaque, other.opaque);")
     result.append("\treturn *this;")
@@ -781,6 +822,8 @@ def generate_engine_classes_bindings(api, output_dir, use_template_get_node):
                 if "arguments" in method:
                     for argument in method["arguments"]:
                         type_name = argument["type"]
+                        if type_name.startswith("const "):
+                            type_name = type_name[6:]
                         if type_name.endswith("*"):
                             type_name = type_name[:-1]
                         if is_included(type_name, class_name):
@@ -794,6 +837,8 @@ def generate_engine_classes_bindings(api, output_dir, use_template_get_node):
                                 fully_used_classes.add("Ref")
                 if "return_value" in method:
                     type_name = method["return_value"]["type"]
+                    if type_name.startswith("const "):
+                        type_name = type_name[6:]
                     if type_name.endswith("*"):
                         type_name = type_name[:-1]
                     if is_included(type_name, class_name):
@@ -851,15 +896,33 @@ def generate_engine_classes_bindings(api, output_dir, use_template_get_node):
         result.append(f"#ifndef {header_guard}")
         result.append(f"#define {header_guard}")
 
+        used_classes = []
+        expanded_format = native_struct["format"].replace("(", " ").replace(")", ";").replace(",", ";")
+        for field in expanded_format.split(";"):
+            field_type = field.strip().split(" ")[0].split("::")[0]
+            if field_type != "" and not is_included_type(field_type) and not is_pod_type(field_type):
+                if not field_type in used_classes:
+                    used_classes.append(field_type)
+
         result.append("")
+
+        for included in used_classes:
+            result.append(f"#include <godot_cpp/{get_include_path(included)}>")
+
+        if len(used_classes) > 0:
+            result.append("")
+
         result.append("namespace godot {")
         result.append("")
 
         result.append(f"struct {struct_name} {{")
-        for field in native_struct["format"].split(","):
-            result.append(f"\t{field};")
+        for field in native_struct["format"].split(";"):
+            if field != "":
+                result.append(f"\t{field};")
         result.append("};")
 
+        result.append("")
+        result.append(f"GDVIRTUAL_NATIVE_PTR({struct_name});")
         result.append("")
         result.append("} // namespace godot")
         result.append("")
@@ -997,6 +1060,12 @@ def generate_engine_class_header(class_api, used_classes, fully_used_classes, us
     result.append("")
 
     result.append("} // namespace godot")
+    result.append("")
+
+    if "enums" in class_api and class_name != "Object":
+        for enum_api in class_api["enums"]:
+            result.append(f'VARIANT_ENUM_CAST({class_name}, {class_name}::{enum_api["name"]});')
+        result.append("")
 
     result.append(f"#endif // ! {header_guard}")
 
@@ -1015,6 +1084,7 @@ def generate_engine_class_source(class_api, used_classes, fully_used_classes, us
     add_header(f"{snake_class_name}.cpp", result)
 
     result.append(f"#include <godot_cpp/classes/{snake_class_name}.hpp>")
+    result.append(f"#include <godot_cpp/classes/global_constants_binds.hpp>")
     result.append("")
     result.append(f"#include <godot_cpp/core/engine_ptrcall.hpp>")
     result.append(f"#include <godot_cpp/core/error_macros.hpp>")
@@ -1076,14 +1146,30 @@ def generate_engine_class_source(class_api, used_classes, fully_used_classes, us
                     return_type = method["return_value"]["type"]
                     meta_type = method["return_value"]["meta"] if "meta" in method["return_value"] else None
                     if is_pod_type(return_type) or is_variant(return_type) or is_enum(return_type):
-                        method_call += f"return internal::_call_native_mb_ret<{correct_type(return_type, meta_type)}>(___method_bind, _owner"
+                        if method["is_static"]:
+                            method_call += f"return internal::_call_native_mb_ret<{get_gdnative_type(correct_type(return_type, meta_type))}>(___method_bind, nullptr"
+                        else:
+                            method_call += f"return internal::_call_native_mb_ret<{get_gdnative_type(correct_type(return_type, meta_type))}>(___method_bind, _owner"
                     elif is_refcounted(return_type):
-                        method_call += f"return Ref<{return_type}>::___internal_constructor(internal::_call_native_mb_ret_obj<{return_type}>(___method_bind, _owner"
+                        if method["is_static"]:
+                            method_call += f"return Ref<{return_type}>::___internal_constructor(internal::_call_native_mb_ret_obj<{return_type}>(___method_bind, _nullptr"
+                        else:
+                            method_call += f"return Ref<{return_type}>::___internal_constructor(internal::_call_native_mb_ret_obj<{return_type}>(___method_bind, _owner"
                         is_ref = True
                     else:
-                        method_call += f"return internal::_call_native_mb_ret_obj<{return_type}>(___method_bind, _owner"
+                        if method["is_static"]:
+                            method_call += (
+                                f"return internal::_call_native_mb_ret_obj<{return_type}>(___method_bind, nullptr"
+                            )
+                        else:
+                            method_call += (
+                                f"return internal::_call_native_mb_ret_obj<{return_type}>(___method_bind, _owner"
+                            )
                 else:
-                    method_call += f"internal::_call_native_mb_no_ret(___method_bind, _owner"
+                    if method["is_static"]:
+                        method_call += f"internal::_call_native_mb_no_ret(___method_bind, nullptr"
+                    else:
+                        method_call += f"internal::_call_native_mb_no_ret(___method_bind, _owner"
 
                 if "arguments" in method:
                     method_call += ", "
@@ -1108,7 +1194,11 @@ def generate_engine_class_source(class_api, used_classes, fully_used_classes, us
             result.append(method_call)
 
             if vararg and ("return_value" in method and method["return_value"]["type"] != "void"):
-                result.append("\treturn ret;")
+                return_type = method["return_value"]["type"].replace("enum::", "")
+                if return_type != "Variant":
+                    result.append(f"\treturn VariantCaster<{return_type}>::cast(ret);")
+                else:
+                    result.append("\treturn ret;")
 
             result.append("}")
             result.append("")
@@ -1174,6 +1264,42 @@ def generate_global_constants(api, output_dir):
     header.append("} // namespace godot")
 
     header.append("")
+    header.append(f"#endif // ! {header_guard}")
+
+    with header_filename.open("w+") as header_file:
+        header_file.write("\n".join(header))
+
+
+def generate_global_constant_binds(api, output_dir):
+    include_gen_folder = Path(output_dir) / "include" / "godot_cpp" / "classes"
+    source_gen_folder = Path(output_dir) / "src" / "classes"
+
+    include_gen_folder.mkdir(parents=True, exist_ok=True)
+    source_gen_folder.mkdir(parents=True, exist_ok=True)
+
+    # Generate header
+
+    header = []
+    add_header("global_constants_binds.hpp", header)
+
+    header_filename = include_gen_folder / "global_constants_binds.hpp"
+
+    header_guard = "GODOT_CPP_GLOBAL_CONSTANTS_BINDS_HPP"
+    header.append(f"#ifndef {header_guard}")
+    header.append(f"#define {header_guard}")
+    header.append("")
+    header.append("#include <godot_cpp/classes/global_constants.hpp>")
+    header.append("#include <godot_cpp/core/binder_common.hpp>")
+    header.append("")
+
+    for enum_def in api["global_enums"]:
+        if enum_def["name"].startswith("Variant."):
+            continue
+
+        header.append(f'VARIANT_ENUM_CAST(, godot::{enum_def["name"]});')
+
+    header.append("")
+
     header.append(f"#endif // ! {header_guard}")
 
     with header_filename.open("w+") as header_file:
@@ -1268,7 +1394,7 @@ def generate_utility_functions(api, output_dir):
                 if function["return_type"] == "Object":
                     function_call += "internal::_call_utility_ret_obj(___function"
                 else:
-                    function_call += f'internal::_call_utility_ret<{correct_type(function["return_type"])}>(___function'
+                    function_call += f'internal::_call_utility_ret<{get_gdnative_type(correct_type(function["return_type"]))}>(___function'
             else:
                 function_call += "internal::_call_utility_no_ret(___function"
 
@@ -1432,7 +1558,9 @@ def make_signature(
 
     function_signature += ")"
 
-    if "is_const" in function_data and function_data["is_const"]:
+    if "is_static" in function_data and function_data["is_static"] and for_header:
+        function_signature = "static " + function_signature
+    elif "is_const" in function_data and function_data["is_const"]:
         function_signature += " const"
 
     return function_signature
@@ -1519,10 +1647,15 @@ def is_pod_type(type_name):
     return type_name in [
         "Nil",
         "void",
-        "int",
-        "float",
         "bool",
+        "real_t",
+        "float",
         "double",
+        "int",
+        "int8_t",
+        "uint8_t",
+        "int16_t",
+        "uint16_t",
         "int32_t",
         "int64_t",
         "uint32_t",
@@ -1538,6 +1671,7 @@ def is_included_type(type_name):
         "AABB",
         "Basis",
         "Color",
+        "ObjectID",
         "Plane",
         "Quaternion",
         "Rect2",
@@ -1567,6 +1701,7 @@ def is_packed_array(type_name):
         "PackedVector3Array",
     ]
 
+
 def needs_copy_instead_of_move(type_name):
     """
     Those are types which need initialised data or we'll get warning spam so need a copy instead of move.
@@ -1574,6 +1709,7 @@ def needs_copy_instead_of_move(type_name):
     return type_name in [
         "Dictionary",
     ]
+
 
 def is_enum(type_name):
     return type_name.startswith("enum::")
@@ -1660,7 +1796,13 @@ def correct_type(type_name, meta=None):
 
 def get_gdnative_type(type_name):
     type_conversion_map = {
-        "bool": "uint32_t",
+        "bool": "int8_t",
+        "uint8_t": "int64_t",
+        "int8_t": "int64_t",
+        "uint16_t": "int64_t",
+        "int16_t": "int64_t",
+        "uint32_t": "int64_t",
+        "int32_t": "int64_t",
         "int": "int64_t",
         "float": "double",
     }
@@ -1747,8 +1889,8 @@ header = """\
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */

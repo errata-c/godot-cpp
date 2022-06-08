@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -61,6 +61,34 @@ namespace Math {
 #define Math_E 2.7182818284590452353602874714
 #define Math_INF INFINITY
 #define Math_NAN NAN
+
+// Windows badly defines a lot of stuff we'll never use. Undefine it.
+#ifdef _WIN32
+#undef MIN // override standard definition
+#undef MAX // override standard definition
+#undef CLAMP // override standard definition
+#endif
+
+// Generic ABS function, for math uses please use Math::abs.
+#ifndef ABS
+#define ABS(m_v) (((m_v) < 0) ? (-(m_v)) : (m_v))
+#endif
+
+#ifndef SIGN
+#define SIGN(m_v) (((m_v) == 0) ? (0.0) : (((m_v) < 0) ? (-1.0) : (+1.0)))
+#endif
+
+#ifndef MIN
+#define MIN(m_a, m_b) (((m_a) < (m_b)) ? (m_a) : (m_b))
+#endif
+
+#ifndef MAX
+#define MAX(m_a, m_b) (((m_a) > (m_b)) ? (m_a) : (m_b))
+#endif
+
+#ifndef CLAMP
+#define CLAMP(m_a, m_min, m_max) (((m_a) < (m_min)) ? (m_min) : (((m_a) > (m_max)) ? m_max : m_a))
+#endif
 
 // Functions reproduced as in Godot's source code `math_funcs.h`.
 // Some are overloads to automatically support changing real_t into either double or float in the way Godot does.
@@ -435,7 +463,7 @@ inline int fast_ftoi(float a) {
 	: "m" (a));*/
 
 #else
-	b = lrintf(a); //assuming everything but msvc 2012 or earlier has lrint
+	b = lrintf(a); // assuming everything but msvc 2012 or earlier has lrint
 #endif
 	return b;
 }

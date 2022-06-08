@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -50,6 +50,14 @@ void MethodBind::set_const(bool p_const) {
 
 void MethodBind::set_return(bool p_return) {
 	_has_return = p_return;
+}
+
+void MethodBind::set_static(bool p_static) {
+	_static = p_static;
+}
+
+void MethodBind::set_vararg(bool p_vararg) {
+	_vararg = p_vararg;
 }
 
 void MethodBind::set_argument_names(const std::vector<std::string> &p_names) {
@@ -103,7 +111,7 @@ void MethodBind::bind_call(void *p_method_userdata, GDExtensionClassInstancePtr 
 	Variant ret = bind->call(p_instance, p_args, p_argument_count, *r_error);
 	// This assumes the return value is an empty Variant, so it doesn't need to call the destructor first.
 	// Since only NativeExtensionMethodBind calls this from the Godot side, it should always be the case.
-	internal::gdn_interface->variant_new_copy(r_return, ret.ptr());
+	internal::gdn_interface->variant_new_copy(r_return, ret._native_ptr());
 }
 
 void MethodBind::bind_ptrcall(void *p_method_userdata, GDExtensionClassInstancePtr p_instance, const GDNativeTypePtr *p_args, GDNativeTypePtr r_return) {

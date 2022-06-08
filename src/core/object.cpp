@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -33,22 +33,22 @@
 namespace godot {
 
 MethodInfo::MethodInfo() :
-		flags(METHOD_FLAG_NORMAL) {}
+		flags(GDNATIVE_EXTENSION_METHOD_FLAG_NORMAL) {}
 
 MethodInfo::MethodInfo(const char *p_name) :
-		name(p_name), flags(METHOD_FLAG_NORMAL) {}
+		name(p_name), flags(GDNATIVE_EXTENSION_METHOD_FLAG_NORMAL) {}
 
 MethodInfo::MethodInfo(Variant::Type ret) :
-		flags(METHOD_FLAG_NORMAL) {
+		flags(GDNATIVE_EXTENSION_METHOD_FLAG_NORMAL) {
 	return_val.type = ret;
 }
 
 MethodInfo::MethodInfo(Variant::Type ret, const char *p_name) :
-		name(p_name), flags(METHOD_FLAG_NORMAL) {
+		name(p_name), flags(GDNATIVE_EXTENSION_METHOD_FLAG_NORMAL) {
 	return_val.type = ret;
 }
 
 MethodInfo::MethodInfo(const PropertyInfo &p_ret, const char *p_name) :
-		name(p_name), return_val(p_ret), flags(METHOD_FLAG_NORMAL) {}
+		name(p_name), return_val(p_ret), flags(GDNATIVE_EXTENSION_METHOD_FLAG_NORMAL) {}
 
 } // namespace godot

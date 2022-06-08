@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -87,7 +87,10 @@ public:
 	ExampleRef *return_extended_ref() const;
 	Ref<ExampleRef> extended_ref_checks(Ref<ExampleRef> p_ref) const;
 	Variant varargs_func(const Variant **args, GDNativeInt arg_count, GDNativeCallError &error);
+	int varargs_func_nv(const Variant **args, GDNativeInt arg_count, GDNativeCallError &error);
+	void varargs_func_void(const Variant **args, GDNativeInt arg_count, GDNativeCallError &error);
 	void emit_custom_signal(const String &name, int value);
+	int def_args(int p_a = 100, int p_b = 200);
 
 	Array test_array() const;
 	Dictionary test_dictionary() const;
@@ -95,6 +98,10 @@ public:
 	// Property.
 	void set_custom_position(const Vector2 &pos);
 	Vector2 get_custom_position() const;
+
+	// Static method.
+	static int test_static(int p_a, int p_b);
+	static void test_static2();
 
 	// Virtual function override (no need to bind manually).
 	virtual bool _has_point(const Vector2 &point) const override;

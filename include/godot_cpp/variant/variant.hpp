@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -45,7 +45,7 @@ namespace godot {
 class Variant {
 	uint8_t opaque[GODOT_CPP_VARIANT_SIZE]{ 0 };
 
-	_FORCE_INLINE_ GDNativeVariantPtr ptr() const { return const_cast<uint8_t(*)[GODOT_CPP_VARIANT_SIZE]>(&opaque); }
+	_FORCE_INLINE_ GDNativeVariantPtr _native_ptr() const { return const_cast<uint8_t(*)[GODOT_CPP_VARIANT_SIZE]>(&opaque); }
 
 	friend class GDExtensionBinding;
 	friend class MethodBind;
@@ -102,14 +102,14 @@ public:
 	};
 
 	enum Operator {
-		//comparison
+		// comparison
 		OP_EQUAL,
 		OP_NOT_EQUAL,
 		OP_LESS,
 		OP_LESS_EQUAL,
 		OP_GREATER,
 		OP_GREATER_EQUAL,
-		//mathematic
+		// mathematic
 		OP_ADD,
 		OP_SUBTRACT,
 		OP_MULTIPLY,
@@ -117,19 +117,19 @@ public:
 		OP_NEGATE,
 		OP_POSITIVE,
 		OP_MODULE,
-		//bitwise
+		// bitwise
 		OP_SHIFT_LEFT,
 		OP_SHIFT_RIGHT,
 		OP_BIT_AND,
 		OP_BIT_OR,
 		OP_BIT_XOR,
 		OP_BIT_NEGATE,
-		//logic
+		// logic
 		OP_AND,
 		OP_OR,
 		OP_XOR,
 		OP_NOT,
-		//containment
+		// containment
 		OP_IN,
 		OP_MAX
 	};
@@ -285,6 +285,8 @@ public:
 	bool has_key(const Variant &key, bool *r_valid = nullptr) const;
 	static bool has_member(Variant::Type type, const StringName &member);
 
+	uint32_t hash() const;
+	uint32_t recursive_hash(int recursion_count) const;
 	bool hash_compare(const Variant &variant) const;
 	bool booleanize() const;
 	String stringify() const;
@@ -297,6 +299,14 @@ public:
 	static bool can_convert_strict(Variant::Type from, Variant::Type to);
 
 	void clear();
+};
+
+struct VariantHasher {
+	static _FORCE_INLINE_ uint32_t hash(const Variant &p_variant) { return p_variant.hash(); }
+};
+
+struct VariantComparator {
+	static _FORCE_INLINE_ bool compare(const Variant &p_lhs, const Variant &p_rhs) { return p_lhs.hash_compare(p_rhs); }
 };
 
 } // namespace godot

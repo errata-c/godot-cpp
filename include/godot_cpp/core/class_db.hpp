@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -45,6 +45,8 @@
 #include <vector>
 
 namespace godot {
+
+#define DEFVAL(m_defval) (m_defval)
 
 struct MethodDefinition {
 	const char *name = nullptr;
@@ -101,10 +103,15 @@ public:
 	template <class T>
 	static void register_class();
 
-	template <class N, class M>
-	static MethodBind *bind_method(N p_method_name, M p_method);
+	template <class N, class M, typename... VarArgs>
+	static MethodBind *bind_method(N p_method_name, M p_method, VarArgs... p_args);
+
+	template <class N, class M, typename... VarArgs>
+	static MethodBind *bind_static_method(const char *p_class, N p_method_name, M p_method, VarArgs... p_args);
+
 	template <class M>
 	static MethodBind *bind_vararg_method(uint32_t p_flags, const char *p_name, M p_method, const MethodInfo &p_info = MethodInfo(), const std::vector<Variant> &p_default_args = std::vector<Variant>{}, bool p_return_nil_is_variant = true);
+
 	static void add_property_group(const char *p_class, const char *p_name, const char *p_prefix);
 	static void add_property_subgroup(const char *p_class, const char *p_name, const char *p_prefix);
 	static void add_property(const char *p_class, const PropertyInfo &p_pinfo, const char *p_setter, const char *p_getter, int p_index = -1);
@@ -155,10 +162,11 @@ void ClassDB::register_class() {
 		nullptr, // GDNativeExtensionClassNotification notification_func;
 		nullptr, // GDNativeExtensionClassToString to_string_func;
 		nullptr, // GDNativeExtensionClassReference reference_func;
-		nullptr, // GDNativeExtensionClassUnreference
+		nullptr, // GDNativeExtensionClassUnreference unreference_func;
 		T::create, // GDNativeExtensionClassCreateInstance create_instance_func; /* this one is mandatory */
 		T::free, // GDNativeExtensionClassFreeInstance free_instance_func; /* this one is mandatory */
 		&ClassDB::get_virtual_func, // GDNativeExtensionClassGetVirtual get_virtual_func;
+		nullptr, // GDNativeExtensionClassGetRID get_rid;
 		(void *)cl.name, // void *class_userdata;
 	};
 
@@ -171,11 +179,27 @@ void ClassDB::register_class() {
 	initialize_class(classes[cl.name]);
 }
 
-template <class N, class M>
-MethodBind *ClassDB::bind_method(N p_method_name, M p_method) {
+template <class N, class M, typename... VarArgs>
+MethodBind *ClassDB::bind_method(N p_method_name, M p_method, VarArgs... p_args) {
+	Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
+	const Variant *argptrs[sizeof...(p_args) + 1];
+	for (uint32_t i = 0; i < sizeof...(p_args); i++) {
+		argptrs[i] = &args[i];
+	}
 	MethodBind *bind = create_method_bind(p_method);
+	return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, p_method_name, sizeof...(p_args) == 0 ? nullptr : (const void **)argptrs, sizeof...(p_args));
+}
 
-	return bind_methodfi(0, bind, p_method_name, nullptr, 0);
+template <class N, class M, typename... VarArgs>
+MethodBind *ClassDB::bind_static_method(const char *p_class, N p_method_name, M p_method, VarArgs... p_args) {
+	Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
+	const Variant *argptrs[sizeof...(p_args) + 1];
+	for (uint32_t i = 0; i < sizeof...(p_args); i++) {
+		argptrs[i] = &args[i];
+	}
+	MethodBind *bind = create_static_method_bind(p_method);
+	bind->set_instance_class(p_class);
+	return bind_methodfi(0, bind, p_method_name, sizeof...(p_args) == 0 ? nullptr : (const void **)argptrs, sizeof...(p_args));
 }
 
 template <class M>
@@ -209,6 +233,9 @@ MethodBind *ClassDB::bind_vararg_method(uint32_t p_flags, const char *p_name, M 
 
 	return bind;
 }
+
+#define GDREGISTER_CLASS(m_class) ClassDB::register_class<m_class>();
+
 } // namespace godot
 
 #endif // ! CLASS_DB_HPP

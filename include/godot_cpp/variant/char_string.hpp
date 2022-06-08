@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -48,6 +48,9 @@ public:
 	int length() const;
 	const char *get_data() const;
 
+	CharString(CharString &&p_str);
+	void operator=(CharString &&p_str);
+	CharString() {}
 	~CharString();
 };
 
@@ -63,6 +66,9 @@ public:
 	int length() const;
 	const char16_t *get_data() const;
 
+	Char16String(Char16String &&p_str);
+	void operator=(Char16String &&p_str);
+	Char16String() {}
 	~Char16String();
 };
 
@@ -78,6 +84,9 @@ public:
 	int length() const;
 	const char32_t *get_data() const;
 
+	Char32String(Char32String &&p_str);
+	void operator=(Char32String &&p_str);
+	Char32String() {}
 	~Char32String();
 };
 
@@ -93,6 +102,9 @@ public:
 	int length() const;
 	const wchar_t *get_data() const;
 
+	CharWideString(CharWideString &&p_str);
+	void operator=(CharWideString &&p_str);
+	CharWideString() {}
 	~CharWideString();
 };
 

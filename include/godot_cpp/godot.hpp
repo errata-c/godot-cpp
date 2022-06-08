@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -43,12 +43,20 @@ extern "C" void *token;
 
 } // namespace internal
 
+enum ModuleInitializationLevel {
+	MODULE_INITIALIZATION_LEVEL_CORE = GDNATIVE_INITIALIZATION_CORE,
+	MODULE_INITIALIZATION_LEVEL_SERVERS = GDNATIVE_INITIALIZATION_SERVERS,
+	MODULE_INITIALIZATION_LEVEL_SCENE = GDNATIVE_INITIALIZATION_SCENE,
+	MODULE_INITIALIZATION_LEVEL_EDITOR = GDNATIVE_INITIALIZATION_EDITOR
+};
+
 class GDExtensionBinding {
 public:
-	using Callback = void (*)();
+	using Callback = void (*)(ModuleInitializationLevel p_level);
 
-	static Callback init_callbacks[GDNATIVE_MAX_INITIALIZATION_LEVEL];
-	static Callback terminate_callbacks[GDNATIVE_MAX_INITIALIZATION_LEVEL];
+	static Callback init_callback;
+	static Callback terminate_callback;
+	static GDNativeInitializationLevel minimum_initialization_level;
 	static GDNativeBool init(const GDNativeInterface *p_interface, const GDNativeExtensionClassLibraryPtr p_library, GDNativeInitialization *r_initialization);
 
 public:
@@ -66,16 +74,9 @@ public:
 				library(p_library),
 				initialization(r_initialization){};
 
-		void register_core_initializer(Callback p_core_init) const;
-		void register_server_initializer(Callback p_server_init) const;
-		void register_scene_initializer(Callback p_scene_init) const;
-		void register_editor_initializer(Callback p_editor_init) const;
-		void register_driver_initializer(Callback p_driver_init) const;
-		void register_core_terminator(Callback p_core_terminate) const;
-		void register_server_terminator(Callback p_server_terminate) const;
-		void register_scene_terminator(Callback p_scene_terminate) const;
-		void register_editor_terminator(Callback p_editor_terminate) const;
-		void register_driver_terminator(Callback p_driver_terminate) const;
+		void register_initializer(Callback p_init) const;
+		void register_terminator(Callback p_init) const;
+		void set_minimum_library_initialization_level(ModuleInitializationLevel p_level) const;
 
 		GDNativeBool init() const;
 	};

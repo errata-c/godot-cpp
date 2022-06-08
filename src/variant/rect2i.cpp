@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -30,4 +30,17 @@
 
 #include <godot_cpp/variant/rect2i.hpp>
 
-// No implementation left. This is here to add the header as a compiled unit.
+#include <godot_cpp/variant/rect2.hpp>
+#include <godot_cpp/variant/string.hpp>
+
+namespace godot {
+
+Rect2i::operator String() const {
+	return String(position) + ", " + String(size);
+}
+
+Rect2i::operator Rect2() const {
+	return Rect2(position, size);
+}
+
+} // namespace godot

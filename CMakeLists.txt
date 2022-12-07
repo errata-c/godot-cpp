@@ -41,17 +41,7 @@ project(GODOT_CPP
 VERSION 3.4.5
 LANGUAGES C CXX)
 
-# Change the output directory to the bin directory
-set(BUILD_PATH ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${BUILD_PATH}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${BUILD_PATH}")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${BUILD_PATH}")
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${BUILD_PATH}")
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${BUILD_PATH}")
+get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 if(NOT IS_SUBPROJECT)
 	include(FetchContent)
@@ -80,10 +70,6 @@ set(GODOT_CPP_HEADERS_DIR "godot-headers" CACHE STRING
 
 set(GODOT_CPP_CUSTOM_API_FILE "godot-headers/api.json" CACHE STRING 
 	"Location of the api.json file, describing what to actually generate from the header files")
-
-# Input from user for godot headers and the api file
-set(GODOT_HEADERS_DIR "godot-headers" CACHE STRING "")
-set(GODOT_CUSTOM_API_FILE "godot-headers/api.json" CACHE STRING "")
 
 set(GODOT_COMPILE_FLAGS )
 set(GODOT_LINKER_FLAGS )
@@ -125,7 +111,7 @@ else()
 endif()
 
 # Generate source from the bindings file
-find_package(Python REQUIRED)
+find_package(Python3 3.4 REQUIRED)
 if(GODOT_CPP_GENERATE_TEMPLATE_GET_NODE)
 	set(GENERATE_BINDING_PARAMETERS "True")
 else()

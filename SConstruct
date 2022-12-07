@@ -127,6 +127,10 @@ opts.Add(
         ignorecase=2,
     )
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+>>>>>>> 90d477954fbd9cac4c4656831c5d022f72a309ff
 )
 opts.Add(EnumVariable("android_arch", "Target Android architecture", "armv7", ["armv7", "arm64v8", "x86", "x86_64"]))
 opts.Add("macos_deployment_target", "macOS deployment target", "default")

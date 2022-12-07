@@ -35,7 +35,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(GODOT_CPP
-VERSION 3.4.5
+VERSION 3.5.1
 LANGUAGES C CXX)
 
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)

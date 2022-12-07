@@ -38,9 +38,7 @@ project(GODOT_CPP
 VERSION 3.4.1
 LANGUAGES C CXX)
 
-get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
-
-if(NOT IS_SUBPROJECT)
+if(PROJECT_IS_TOP_LEVEL)
 	include(FetchContent)
 	
 	# This is for installing the project targets
@@ -131,6 +129,7 @@ if(NOT "$CACHE{GODOT_CPP_BINDINGS_GENERATED}")
 	)
 
 	if("${HEADERS_FILE_LIST}" STREQUAL "" OR "${SOURCES_FILE_LIST}" STREQUAL "")
+		set(GODOT_CPP_BINDINGS_GENERATED FALSE CACHE INTERNAL "")
 		message(FATAL_ERROR "Failed to generate some of the bindings!")
 	else()
 		set(GODOT_CPP_BINDINGS_GENERATED TRUE CACHE INTERNAL "")
@@ -193,7 +192,7 @@ set_target_properties(godot-cpp PROPERTIES
 add_library(godot::cpp ALIAS godot-cpp)
 
 
-if(IS_SUBPROJECT)
+if(NOT PROJECT_IS_TOP_LEVEL)
 	include("cmake/postconfig.cmake")
 else()
 

@@ -31,16 +31,14 @@
 # Generate the buildfiles in a sub directory to not clutter the root directory with build files:
 # mkdir build && cd build && cmake -G "Unix Makefiles" .. && cmake --build .
 
-# Version 3.16 is the newest version supported by Ubuntu
-cmake_minimum_required(VERSION 3.16)
+# We need version 3.21 for the runtime dll checks.
+cmake_minimum_required(VERSION 3.21)
 
 project(GODOT_CPP
 VERSION 3.5.1
 LANGUAGES C CXX)
 
-get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
-
-if(NOT IS_SUBPROJECT)
+if(PROJECT_IS_TOP_LEVEL)
 	include(FetchContent)
 	
 	# This is for installing the project targets
@@ -192,7 +190,7 @@ set_target_properties(godot-cpp PROPERTIES
 add_library(godot::cpp ALIAS godot-cpp)
 
 
-if(IS_SUBPROJECT)
+if(NOT PROJECT_IS_TOP_LEVEL)
 	include("cmake/postconfig.cmake")
 else()
 

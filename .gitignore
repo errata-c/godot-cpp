@@ -11,6 +11,9 @@ src/gen
 # Build configuarion.
 /custom.py
 
+out/
+CMakeSettings.json
+
 # Misc
 logs/*
 *.log

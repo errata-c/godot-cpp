@@ -38,7 +38,7 @@
 # Test build for Windows, Mac and mingw.
 
 cmake_minimum_required(VERSION 3.16)
-project(godot-cpp LANGUAGES CXX)
+project(GODOT_CPP LANGUAGES CXX)
 
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
@@ -232,3 +232,35 @@ set_target_properties(${PROJECT_NAME}
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
 		OUTPUT_NAME "${OUTPUT_NAME}"
 )
+
+if(PROJECT_IS_TOP_LEVEL)
+	# Install the normal include files, the c header files, and the generated files.
+	install(DIRECTORY 
+		"${CMAKE_CURRENT_SOURCE_DIR}/include"
+		"${CMAKE_CURRENT_BINARY_DIR}/gen/include"
+		"${GODOT_GDEXTENSION_DIR}"
+	
+		DESTINATION "include"
+		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+	)
+	
+	install(TARGETS ${PROJECT_NAME}
+		EXPORT ${PROJECT_NAME}-targets
+		RUNTIME DESTINATION "bin/$<CONFIG>"
+		ARCHIVE DESTINATION "lib/$<CONFIG>"
+		LIBRARY DESTINATION "lib/$<CONFIG>"
+	)
+	
+	# Install the main package files, this allows the use of find_package(godot-cpp) later
+	install_package(
+		NAME "godot-cpp"
+		NAMESPACE "godot::"
+		EXPORT "${PROJECT_NAME}-targets"
+		VERSION "${${PROJECT_NAME}_VERSION}"
+		COMPATIBILITY "SameMajorVersion"
+		DESTINATION "${GODOT_CPP_CONFIG_DIR}"
+		
+		# Postconfig contains the necessary setup for the install_gdlib function, to be used downstream
+		POSTCONFIG "${CMAKE_CURRENT_SOURCE_DIR}/cmake/postconfig.cmake"
+	)
+endif()

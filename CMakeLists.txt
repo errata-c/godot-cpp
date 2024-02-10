@@ -37,12 +37,31 @@
 # Todo
 # Test build for Windows, Mac and mingw.
 
+cmake_minimum_required(VERSION 3.16)
 project(godot-cpp LANGUAGES CXX)
-cmake_minimum_required(VERSION 3.12)
+
+get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
+
+if(NOT IS_SUBPROJECT)
+	include(FetchContent)
+	
+	# This is for installing the project targets
+	FetchContent_Declare(
+		ez-cmake
+		GIT_REPOSITORY "https://github.com/errata-c/ez-cmake.git"
+		GIT_TAG main
+	)
+	FetchContent_MakeAvailable(ez-cmake)
+endif()
+
 
 option(GENERATE_TEMPLATE_GET_NODE "Generate a template version of the Node class's get_node." ON)
 option(GODOT_CPP_SYSTEM_HEADERS "Expose headers as SYSTEM." ON)
 option(GODOT_CPP_WARNING_AS_ERROR "Treat warnings as errors" OFF)
+
+# The default config directory is one that cmake's find_package function will automatically search for package config files.
+set(GODOT_CPP_CONFIG_DIR "share/godot-cpp" CACHE STRING "The relative directory to install godot-cpp package config files.")
+
 
 # Add path to modules
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" )

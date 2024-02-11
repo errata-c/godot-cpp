@@ -38,7 +38,10 @@
 # Test build for Windows, Mac and mingw.
 
 cmake_minimum_required(VERSION 3.16)
-project(GODOT_CPP LANGUAGES CXX)
+project(GODOT_CPP 
+	LANGUAGES CXX
+	VERSION 4.0.0
+)
 
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
@@ -89,7 +92,7 @@ if(NOT DEFINED BITS)
 endif()
 
 # Input from user for GDExtension interface header and the API JSON file
-set(GODOT_GDEXTENSION_DIR "gdextension" CACHE STRING "")
+set(GODOT_GDEXTENSION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gdextension" CACHE STRING "")
 set(GODOT_CUSTOM_API_FILE "" CACHE STRING "")
 set(FLOAT_PRECISION "single" CACHE STRING "")
 if ("${FLOAT_PRECISION}" STREQUAL "double")
@@ -236,9 +239,9 @@ set_target_properties(${PROJECT_NAME}
 if(PROJECT_IS_TOP_LEVEL)
 	# Install the normal include files, the c header files, and the generated files.
 	install(DIRECTORY 
-		"${CMAKE_CURRENT_SOURCE_DIR}/include"
-		"${CMAKE_CURRENT_BINARY_DIR}/gen/include"
-		"${GODOT_GDEXTENSION_DIR}"
+		"${CMAKE_CURRENT_SOURCE_DIR}/include/"
+		"${CMAKE_CURRENT_BINARY_DIR}/gen/include/"
+		"${GODOT_GDEXTENSION_DIR}/"
 	
 		DESTINATION "include"
 		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
@@ -261,6 +264,7 @@ if(PROJECT_IS_TOP_LEVEL)
 		DESTINATION "${GODOT_CPP_CONFIG_DIR}"
 		
 		# Postconfig contains the necessary setup for the install_gdlib function, to be used downstream
-		POSTCONFIG "${CMAKE_CURRENT_SOURCE_DIR}/cmake/postconfig.cmake"
+		# For right now, this is excluded, as we may not need the install_gdlib function with 4.0
+		#POSTCONFIG "${CMAKE_CURRENT_SOURCE_DIR}/cmake/postconfig.cmake"
 	)
 endif()

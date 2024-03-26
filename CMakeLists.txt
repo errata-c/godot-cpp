@@ -64,7 +64,7 @@ option(GODOT_CPP_WARNING_AS_ERROR "Treat warnings as errors" OFF)
 
 # The default config directory is one that cmake's find_package function will automatically search for package config files.
 set(GODOT_CPP_CONFIG_DIR "share/godot-cpp" CACHE STRING "The relative directory to install godot-cpp package config files.")
-
+set(PACKAGE_NAME "godot-cpp")
 
 # Add path to modules
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" )
@@ -156,12 +156,12 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.c**)
 file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS include/*.h**)
 
 # Define our godot-cpp library
-add_library(${PROJECT_NAME} STATIC
+add_library(${PACKAGE_NAME} STATIC
 		${SOURCES}
 		${HEADERS}
 		${GENERATED_FILES_LIST}
 )
-add_library(godot::cpp ALIAS ${PROJECT_NAME})
+add_library(godot::cpp ALIAS ${PACKAGE_NAME})
 
 include(GodotCompilerWarnings)
 
@@ -171,12 +171,12 @@ if(GODOT_CPP_BUILDING_SELF)
     set_warning_as_error()
 endif()
 
-target_compile_features(${PROJECT_NAME}
+target_compile_features(${PACKAGE_NAME}
 	PRIVATE
 		cxx_std_17
 )
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC
+target_compile_definitions(${PACKAGE_NAME} PUBLIC
 	$<$<CONFIG:Debug>:
 		DEBUG_ENABLED
 		DEBUG_METHODS_ENABLED
@@ -186,7 +186,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 	>
 )
 
-target_link_options(${PROJECT_NAME} PRIVATE
+target_link_options(${PACKAGE_NAME} PRIVATE
 	$<$<NOT:${compiler_is_msvc}>:
 		-static-libgcc
 		-static-libstdc++
@@ -200,7 +200,7 @@ if (GODOT_CPP_SYSTEM_HEADERS)
 	set(GODOT_CPP_SYSTEM_HEADERS_ATTRIBUTE SYSTEM)
 endif ()
 
-target_include_directories(${PROJECT_NAME} ${GODOT_CPP_SYSTEM_HEADERS_ATTRIBUTE} PUBLIC
+target_include_directories(${PACKAGE_NAME} ${GODOT_CPP_SYSTEM_HEADERS_ATTRIBUTE} PUBLIC
 	
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/gen/include>"
@@ -210,7 +210,7 @@ target_include_directories(${PROJECT_NAME} ${GODOT_CPP_SYSTEM_HEADERS_ATTRIBUTE}
 )
 
 # Add the compile flags
-set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${GODOT_COMPILE_FLAGS})
+set_property(TARGET ${PACKAGE_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${GODOT_COMPILE_FLAGS})
 
 # Create the correct name (godot.os.build_type.system_bits)
 string(TOLOWER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME)
@@ -226,7 +226,7 @@ else()
 	set(OUTPUT_NAME "godot-cpp.${SYSTEM_NAME}.${BUILD_TYPE}.${BITS}")
 endif()
 
-set_target_properties(${PROJECT_NAME}
+set_target_properties(${PACKAGE_NAME}
 	PROPERTIES
 		CXX_EXTENSIONS OFF
 		POSITION_INDEPENDENT_CODE ON
@@ -234,6 +234,7 @@ set_target_properties(${PROJECT_NAME}
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
 		OUTPUT_NAME "${OUTPUT_NAME}"
+		EXPORT_NAME "cpp" # The export name is prefixed with the export namespace, which results in 'godot::cpp'
 )
 
 if(PROJECT_IS_TOP_LEVEL)
@@ -247,8 +248,8 @@ if(PROJECT_IS_TOP_LEVEL)
 		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 	)
 	
-	install(TARGETS ${PROJECT_NAME}
-		EXPORT ${PROJECT_NAME}-targets
+	install(TARGETS ${PACKAGE_NAME}
+		EXPORT ${PACKAGE_NAME}-targets
 		RUNTIME DESTINATION "bin/$<CONFIG>"
 		ARCHIVE DESTINATION "lib/$<CONFIG>"
 		LIBRARY DESTINATION "lib/$<CONFIG>"
@@ -258,7 +259,7 @@ if(PROJECT_IS_TOP_LEVEL)
 	install_package(
 		NAME "godot-cpp"
 		NAMESPACE "godot::"
-		EXPORT "${PROJECT_NAME}-targets"
+		EXPORT "${PACKAGE_NAME}-targets"
 		VERSION "${${PROJECT_NAME}_VERSION}"
 		COMPATIBILITY "SameMajorVersion"
 		DESTINATION "${GODOT_CPP_CONFIG_DIR}"

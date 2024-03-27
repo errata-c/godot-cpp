@@ -7,7 +7,7 @@ set( compiler_less_than_v11 "$<VERSION_LESS:$<CXX_COMPILER_VERSION>,11>" )
 set( compiler_greater_than_or_equal_v12 "$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,12>" )
 
 # These compiler options reflect what is in godot/SConstruct.
-target_compile_options( ${PROJECT_NAME} PRIVATE
+target_compile_options( ${PACKAGE_NAME} PRIVATE
     # MSVC only
     $<${compiler_is_msvc}:
         /W4
@@ -76,12 +76,12 @@ target_compile_options( ${PROJECT_NAME} PRIVATE
 function( set_warning_as_error )
     message( STATUS "[${PROJECT_NAME}] Treating warnings as errors")
     if ( CMAKE_VERSION VERSION_GREATER_EQUAL "3.24" )
-        set_target_properties( ${PROJECT_NAME}
+        set_target_properties( ${PACKAGE_NAME}
             PROPERTIES
                 COMPILE_WARNING_AS_ERROR ON
         )
     else()
-        target_compile_options( ${PROJECT_NAME}
+        target_compile_options( ${PACKAGE_NAME}
             PRIVATE
                 $<${compiler_is_msvc}:/WX>
                 $<$<OR:${compiler_is_clang},${compiler_is_gnu}>:-Werror>

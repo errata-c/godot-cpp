@@ -247,6 +247,10 @@ if(PROJECT_IS_TOP_LEVEL)
 		DESTINATION "include"
 		FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 	)
+
+	install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/update_gdextension.cmake"
+		DESTINATION "${GODOT_CPP_CONFIG_DIR}"
+	)
 	
 	install(TARGETS ${PACKAGE_NAME}
 		EXPORT ${PACKAGE_NAME}-targets
@@ -266,6 +270,6 @@ if(PROJECT_IS_TOP_LEVEL)
 		
 		# Postconfig contains the necessary setup for the install_gdlib function, to be used downstream
 		# For right now, this is excluded, as we may not need the install_gdlib function with 4.0
-		#POSTCONFIG "${CMAKE_CURRENT_SOURCE_DIR}/cmake/postconfig.cmake"
+		POSTCONFIG "${CMAKE_CURRENT_SOURCE_DIR}/cmake/postconfig.cmake"
 	)
 endif()

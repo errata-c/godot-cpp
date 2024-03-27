@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 set(GD_CONFIGURATIONS @GD_CONFIGURATIONS@)
 
-
 # Avoid installing when the config is not in the whitelist, we check here instead of in postconfig to support multi-config generators
 if(NOT DEFINED GD_CONFIGURATIONS OR "${GD_INSTALL_CONFIG}" IN_LIST "GD_CONFIGURATIONS")
 	set(GD_CURRENT_BINARY_DIR "@GD_CURRENT_BINARY_DIR@")

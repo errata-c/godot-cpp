@@ -1,8 +1,26 @@
 [configuration]
 
-entry_symbol = "example_library_init"
-compatibility_minimum = "4.0"
+entry_symbol = "@GD_ENTRY_SYMBOL@"
+compatibility_minimum = "@GD_COMPATIBILITY_MINIMUM@"
 
 [libraries]
 
-[dependencies]
+macos.debug = "res://bin/@GD_LIBRARY_NAME@.macos.debug.framework"
+macos.release = "res://bin/@GD_LIBRARY_NAME@.macos.release.framework"
+
+windows.debug.x86_32 = "res://bin/@GD_LIBRARY_NAME@.windows.debug.x86_32.dll"
+windows.release.x86_32 = "res://bin/@GD_LIBRARY_NAME@.windows.release.x86_32.dll"
+windows.debug.x86_64 = "res://bin/@GD_LIBRARY_NAME@.windows.debug.x86_64.dll"
+windows.release.x86_64 = "res://bin/@GD_LIBRARY_NAME@.windows.release.x86_64.dll"
+
+linux.debug.x86_64 = "res://bin/@GD_LIBRARY_NAME@.linux.debug.x86_64.so"
+linux.release.x86_64 = "res://bin/@GD_LIBRARY_NAME@.linux.release.x86_64.so"
+linux.debug.arm64 = "res://bin/@GD_LIBRARY_NAME@.linux.debug.arm64.so"
+linux.release.arm64 = "res://bin/@GD_LIBRARY_NAME@.linux.release.arm64.so"
+linux.debug.rv64 = "res://bin/@GD_LIBRARY_NAME@.linux.debug.rv64.so"
+linux.release.rv64 = "res://bin/@GD_LIBRARY_NAME@.linux.release.rv64.so"
+
+android.debug.x86_64 = "res://bin/@GD_LIBRARY_NAME@.android.debug.x86_64.so"
+android.release.x86_64 = "res://bin/@GD_LIBRARY_NAME@.android.release.x86_64.so"
+android.debug.arm64 = "res://bin/@GD_LIBRARY_NAME@.android.debug.arm64.so"
+android.release.arm64 = "res://bin/@GD_LIBRARY_NAME@.android.release.arm64.so"

@@ -16,6 +16,24 @@ set(GD_EXT_Windows ".dll")
 set(GD_EXT_X11 ".so")
 set(GD_EXT_iOS ".framework" ".xcframework" ".a" ".dylib")
 
+# We need to refactor this code to work with the new gdextension API!
+# Specifically:
+#     Change the way we find and store platform related information in configuration
+#     Change the way platform info is encoded into the installed binary name.
+#     Include a test to detect that the ENTRY_SYMBOL is correct!
+#     Determine if dependencies need to be added to the .gdextension file
+#     Install required dependencies on platforms like windows?
+#     Update the extension template!
+#     
+#     
+#     TEST TEST TEST
+
+# The new format for naming installed extension binaries is:
+# library_name.platform.config.dynamic_library_extension
+# OR
+# library_name.platform.config.platform_architecture.dynamic_library_extension
+
+
 # This function handles setting up and installing the actual gdextension configuration file, necessary for godot to use our lib.
 # It checks for an already installed .gdextension file, and updates it to include the new configuration without overwritting the old.
 # This allows for installing multiple different architectures to the same project directory.
